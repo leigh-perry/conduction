@@ -37,7 +37,7 @@ object Environment {
   def withMap(map: Map[String, String]): Environment =
     (key: String) => map.get(key)
 
-  def withDebugMap(inner: Environment, log: String => Unit = println): Environment =
+  def withDebug(inner: Environment, log: String => Unit = println): Environment =
     (key: String) => {
       val value = inner.get(key)
       log(s"> get $key => $value")
@@ -80,19 +80,18 @@ object Configured {
 
   implicit def `Configured for Option`[A: Configured]: Configured[Option[A]] =
     new Configured[Option[A]] {
-      override def value(env: Environment, name: String): ValidatedNec[ConfiguredError, Option[A]] = {
+      override def value(env: Environment, name: String): ValidatedNec[ConfiguredError, Option[A]] =
         Configured[A]
           .value(env, s"${name}_OPT")
           .fold(
             c => if (c.forall(_.isInstanceOf[ConfiguredError.MissingValue])) None.validNec else c.invalid,
             a => a.some.valid
           )
-      }
     }
 
   implicit def `Configured for List`[A: Configured]: Configured[List[A]] =
     new Configured[List[A]] {
-      override def value(env: Environment, name: String): ValidatedNec[ConfiguredError, List[A]] = {
+      override def value(env: Environment, name: String): ValidatedNec[ConfiguredError, List[A]] =
         Configured[Int]
           .value(env, s"${name}_COUNT")
           .fold(
@@ -101,7 +100,6 @@ object Configured {
               List.tabulate(n)(identity)
                 .traverse(i => Configured[A].value(env, s"${name}_$i"))
           )
-      }
     }
 
   implicit def `Configured for Either`[A: Configured, B: Configured]: Configured[Either[A, B]] =

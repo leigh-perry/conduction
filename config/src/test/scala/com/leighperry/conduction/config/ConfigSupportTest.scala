@@ -5,6 +5,7 @@ import cats.syntax.apply._
 import cats.syntax.option._
 import cats.syntax.validated._
 import com.iag.mobai.shared.TestSupport
+import com.leighperry.conduction.config.Environment._
 import minitest.SimpleTestSuite
 import minitest.laws.Checkers
 import org.scalacheck.Gen
@@ -17,7 +18,7 @@ object ConfigSupportTest
   private val nonEmptyString: Gen[String] =
     for {
       scount <- Gen.chooseNum[Int](1, 20)
-      chars <- Gen.listOfN(scount, Gen.alphaChar)
+      chars <- Gen.listOfN(scount, Gen.asciiChar)
     } yield chars.mkString
 
 
@@ -25,7 +26,7 @@ object ConfigSupportTest
     check2 {
       (k: String, v: String) =>
         Configured[String]
-          .value(Environment.withMap(Map(k -> v)), k)
+          .value(withMap(Map(k -> v)), k)
           .shouldBe(v.validNec)
     }
   }
@@ -34,7 +35,7 @@ object ConfigSupportTest
     check2 {
       (k: String, v: Int) =>
         Configured[Int]
-          .value(Environment.withMap(Map(k -> v.toString)), k)
+          .value(withMap(Map(k -> v.toString)), k)
           .shouldBe(v.validNec)
     }
   }
@@ -42,8 +43,9 @@ object ConfigSupportTest
   test("Optional String values") {
     check2 {
       (k: String, v: String) =>
+        val ok = s"${k}_OPT"
         Configured[Option[String]]
-          .value(Environment.withMap(Map(k -> v)), k)
+          .value(withMap(Map(ok -> v)), k)
           .shouldBe(v.some.validNec)
     }
   }
@@ -51,8 +53,9 @@ object ConfigSupportTest
   test("Optional Int values") {
     check2 {
       (k: String, v: Int) =>
+        val ok = s"${k}_OPT"
         Configured[Option[Int]]
-          .value(Environment.withMap(Map(k -> v.toString)), k)
+          .value(withMap(Map(ok -> v.toString)), k)
           .shouldBe(v.some.validNec)
     }
   }
@@ -103,8 +106,8 @@ object Testing {
 
   def main(args: Array[String]): Unit = {
     val env: Environment =
-      Environment.withDebugMap(
-        Environment.withMap(
+      Environment.withDebug(
+        withMap(
           Map(
             "A_DOUBLE" -> "1.23",
             "A_DOUBLE_OPT" -> "1.23",
