@@ -2,7 +2,6 @@ package com.leighperry.conduction.config
 
 import cats.data.ValidatedNec
 import cats.instances.list._
-import cats.syntax.apply._
 import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.traverse._
