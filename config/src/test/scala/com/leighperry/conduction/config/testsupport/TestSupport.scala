@@ -3,6 +3,7 @@ package com.leighperry.conduction.config.testsupport
 import cats.Eq
 import cats.syntax.eq._
 import minitest.api.Asserts
+import org.scalacheck.Gen
 
 import scala.language.implicitConversions
 
@@ -19,7 +20,7 @@ final class TestSupportOps[A](val actual: A) extends Asserts {
   def shouldSatisfy(f: A => Boolean): Boolean = {
     val result = f(actual)
     if (!result) {
-      println(s"       => FAIL:   doesn't satisfy: [$actual]")
+      println(s"       => FAIL:   doesn't satisfy, actual: [$actual]")
     }
     result
   }
@@ -62,9 +63,32 @@ trait ToTestSupportEqOps {
     new TestSupportEqOps[A](actual)
 }
 
+////
+
+
+trait TestSupportGens {
+  def genBoolean: Gen[Boolean] =
+    Gen.posNum[Int].map(_ % 2 == 0)
+
+  def genNonEmptyString(n: Int): Gen[String] =
+    for {
+      count <- Gen.choose(1, n)
+      chars <- Gen.listOfN(count, Gen.alphaChar)
+    } yield chars.mkString
+
+  def multilineGen(genTestString: Gen[String]): Gen[(List[String], String)] =
+    for {
+      scount <- Gen.chooseNum[Int](0, 20)
+      strings <- Gen.listOfN(scount, genTestString)
+    } yield strings -> strings.flatMap(s => List("\n", s, "\n")).mkString("\n")
+}
+
+////
+
 trait TestSupport
   extends ToTestSupportOps
     with ToTestSupportEqOps
+    with TestSupportGens
 
 object testsupportinstances
   extends TestSupport

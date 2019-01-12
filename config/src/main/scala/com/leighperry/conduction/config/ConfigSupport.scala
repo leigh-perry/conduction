@@ -8,6 +8,9 @@ import cats.syntax.traverse._
 import cats.syntax.validated._
 
 
+/**
+  * Support for reading detailed, nested configuration from environment variables etc
+  */
 trait ConfiguredError
 
 object ConfiguredError {
@@ -22,7 +25,7 @@ trait Environment {
 }
 
 object Environment {
-  def vars: Environment =
+  def fromEnvVars: Environment =
     new Environment {
 
       import scala.collection.JavaConverters._
@@ -33,13 +36,16 @@ object Environment {
         envvars.get(key)
     }
 
-  def withMap(map: Map[String, String]): Environment =
+  def fromMap(map: Map[String, String]): Environment =
     (key: String) => map.get(key)
 
-  def withDebug(inner: Environment, log: String => Unit = println): Environment =
+  val printer: String => Unit = (s: String) => println(s"         $s")
+  val silencer: String => Unit = (_: String) => ()
+
+  def logging(inner: Environment, log: String => Unit = silencer): Environment =
     (key: String) => {
       val value = inner.get(key)
-      log(s"> get $key => $value")
+      value.fold(log(s"Not configured: $key"))(v => log(s"export $key=$v"))
       value
     }
 }
@@ -145,3 +151,18 @@ trait ToConfiguredOps {
 
 object configuredinstances
   extends ToConfiguredOps
+
+////
+
+object ConfigSupport
+  extends ToConfiguredOps {
+
+  def wrapped[A: Configured, W](
+    env: Environment,
+    name: String,
+    suffix: String,
+    mapper: A => W
+  ): ValidatedNec[ConfiguredError, W] =
+    Configured[A].valueSuffixed(env, name, suffix).map(mapper)
+
+}

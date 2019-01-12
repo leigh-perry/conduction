@@ -5,7 +5,6 @@ import cats.syntax.apply._
 import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.validated._
-import com.leighperry.conduction.config.Environment._
 import com.leighperry.conduction.config.testsupport.TestSupport
 import minitest.SimpleTestSuite
 import minitest.laws.Checkers
@@ -15,13 +14,14 @@ object ConfigSupportTest
     with Checkers
     with TestSupport {
 
+  import Environment._
   import configuredinstances._
 
   test("Primitive String values") {
     check2 {
       (k: String, v: String) =>
         Configured[String]
-          .value(withMap(Map(k -> v)), k)
+          .value(fromMap(Map(k -> v)), k)
           .shouldBe(v.validNec)
     }
   }
@@ -30,7 +30,7 @@ object ConfigSupportTest
     check2 {
       (k: String, v: Int) =>
         Configured[Int]
-          .value(withMap(Map(k -> v.toString)), k)
+          .value(fromMap(Map(k -> v.toString)), k)
           .shouldBe(v.validNec)
     }
   }
@@ -40,7 +40,7 @@ object ConfigSupportTest
       (k: String, v: String) =>
         val ok = s"${k}_OPT"
         Configured[Option[String]]
-          .value(withMap(Map(ok -> v)), k)
+          .value(fromMap(Map(ok -> v)), k)
           .shouldBe(v.some.validNec)
     }
   }
@@ -50,7 +50,7 @@ object ConfigSupportTest
       (k: String, v: Int) =>
         val ok = s"${k}_OPT"
         Configured[Option[Int]]
-          .value(withMap(Map(ok -> v.toString)), k)
+          .value(fromMap(Map(ok -> v.toString)), k)
           .shouldBe(v.some.validNec)
     }
   }
@@ -60,7 +60,7 @@ object ConfigSupportTest
       (k: String, v: String) =>
         val ok = s"${k}_OPT"
         Configured[Option[String]]
-          .value(withMap(Map(ok -> v)), s"${k}a")
+          .value(fromMap(Map(ok -> v)), s"${k}a")
           .shouldBe(None.validNec)
     }
   }
@@ -70,7 +70,7 @@ object ConfigSupportTest
       (k: String, v: Int) =>
         val ok = s"${k}_OPT"
         Configured[Option[Int]]
-          .value(withMap(Map(ok -> v.toString)), s"${k}a")
+          .value(fromMap(Map(ok -> v.toString)), s"${k}a")
           .shouldBe(None.validNec)
     }
   }
@@ -80,14 +80,12 @@ object ConfigSupportTest
       (k: String, v: Int) =>
         val ok = s"${k}_OPT"
         Configured[Option[Int]]
-          .value(withMap(Map(ok -> s"${v.toString}x")), k)
+          .value(fromMap(Map(ok -> s"${v.toString}x")), k)
           .shouldSatisfy {
-            _ match {
-              case Validated.Invalid(nec) =>
-                nec.length.shouldBe(1) &&
-                  nec.forall(_.isInstanceOf[ConfiguredError.InvalidValue])
-              case _ => false
-            }
+            case Validated.Invalid(nec) =>
+              nec.length.shouldBe(1) &&
+                nec.forall(_.isInstanceOf[ConfiguredError.InvalidValue])
+            case _ => false
           }
     }
   }
@@ -134,28 +132,28 @@ object ConfigSupportTest
   test("Present valid Double") {
     val k = "A_DOUBLE"
     val v = "1.23"
-    Configured[Double].value(withMap(Map(k -> v)), "A_DOUBLE")
+    Configured[Double].value(fromMap(Map(k -> v)), "A_DOUBLE")
       .assertIs(1.23.validNec)
   }
 
   test("Missing valid Double") {
     val k = "A_DOUBLE"
     val v = "1.23"
-    Configured[Double].value(withMap(Map(k -> v)), "MISSING")
+    Configured[Double].value(fromMap(Map(k -> v)), "MISSING")
       .assertIs(ConfiguredError.MissingValue("MISSING").invalidNec)
   }
 
   test("Invalid valid Double") {
     val k = "A_DOUBLE"
     val v = "1.23xxx"
-    Configured[Double].value(withMap(Map(k -> v)), k)
+    Configured[Double].value(fromMap(Map(k -> v)), k)
       .assertIs(ConfiguredError.InvalidValue(k, v).invalidNec)
   }
 
 
   val env: Environment =
   //Environment.withDebug(
-    withMap(
+    fromMap(
       Map(
         "LP1_HOST" -> "lp1-host",
         "LP1_PORT" -> "1",
@@ -241,7 +239,7 @@ object ConfigSupportTest
 
   test("Missing Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]") {
     Configured[Either[Endpoint, Either[Endpoint, Endpoint]]].value(env, "CHOICEx")
-      // NonEmptyChain doesn't support == ... TODO investigate Eq
+      // NonEmptyChain doesn't support ==
       //      .assertIsEq(
       //        NonEmptyChain(
       //          ConfiguredError.MissingValue("CHOICEx_C1_HOST"),
@@ -288,29 +286,29 @@ object ConfigSupportTest
       .assertIs(ConfiguredError.MissingValue("INTLISTx_COUNT").invalidNec)
   }
 
-    test("Present valid Configured[List[Endpoint]]") {
-      Configured[List[Endpoint]].value(env, "EPLIST")
-        .assertIs(List(Endpoint("eplist0-host", 2), Endpoint("eplist1-host", 3)).validNec)
-    }
+  test("Present valid Configured[List[Endpoint]]") {
+    Configured[List[Endpoint]].value(env, "EPLIST")
+      .assertIs(List(Endpoint("eplist0-host", 2), Endpoint("eplist1-host", 3)).validNec)
+  }
 
-    test("Missing Configured[List[Endpoint]]") {
-      Configured[List[Endpoint]].value(env, "EPLISTx")
-        .assertIs(ConfiguredError.MissingValue("EPLISTx_COUNT").invalidNec)
-    }
+  test("Missing Configured[List[Endpoint]]") {
+    Configured[List[Endpoint]].value(env, "EPLISTx")
+      .assertIs(ConfiguredError.MissingValue("EPLISTx_COUNT").invalidNec)
+  }
 
-    test("Present valid Configured[List[TwoEndpoints]]") {
-      Configured[List[TwoEndpoints]].value(env, "TEPLIST")
-        .assertIs(
-          List(
-            TwoEndpoints(Endpoint("teplist0-ep1-host", 7), Endpoint("multilist-ep1-host0", 7)),
-            TwoEndpoints(Endpoint("teplist1-ep1-host", 7), Endpoint("multilist-ep2-host1", 7))
-          ).validNec
-        )
-    }
+  test("Present valid Configured[List[TwoEndpoints]]") {
+    Configured[List[TwoEndpoints]].value(env, "TEPLIST")
+      .assertIs(
+        List(
+          TwoEndpoints(Endpoint("teplist0-ep1-host", 7), Endpoint("multilist-ep1-host0", 7)),
+          TwoEndpoints(Endpoint("teplist1-ep1-host", 7), Endpoint("multilist-ep2-host1", 7))
+        ).validNec
+      )
+  }
 
-    test("Missing Configured[List[TwoEndpoints]]") {
-      Configured[List[TwoEndpoints]].value(env, "TEPLISTx")
-        .assertIs(ConfiguredError.MissingValue("TEPLISTx_COUNT").invalidNec)
-    }
+  test("Missing Configured[List[TwoEndpoints]]") {
+    Configured[List[TwoEndpoints]].value(env, "TEPLISTx")
+      .assertIs(ConfiguredError.MissingValue("TEPLISTx_COUNT").invalidNec)
+  }
 
 }
