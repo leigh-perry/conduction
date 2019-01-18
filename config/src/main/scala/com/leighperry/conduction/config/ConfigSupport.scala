@@ -1,5 +1,6 @@
 package com.leighperry.conduction.config
 
+import cats.Functor
 import cats.data.ValidatedNec
 import cats.instances.list._
 import cats.syntax.either._
@@ -122,6 +123,17 @@ object Configured {
                 ),
             a => a.asLeft[B].valid
           )
+    }
+
+  implicit def `Functor for Configured`: Functor[Configured] =
+    new Functor[Configured] {
+      override def map[A, B](fa: Configured[A])(f: A => B): Configured[B] =
+        new Configured[B] {
+          override def value(env: Environment, name: String): ValidatedNec[ConfiguredError, B] =
+            fa.value(env, name)
+              .map(f)
+        }
+
     }
 
   private def eval[A](env: Environment, name: String, f: String => A): ValidatedNec[ConfiguredError, A] =

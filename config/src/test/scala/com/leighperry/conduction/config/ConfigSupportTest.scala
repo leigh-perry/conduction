@@ -3,6 +3,7 @@ package com.leighperry.conduction.config
 import cats.data.{Validated, ValidatedNec}
 import cats.syntax.apply._
 import cats.syntax.either._
+import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
 import com.leighperry.conduction.config.testsupport.TestSupport
@@ -197,6 +198,8 @@ object ConfigSupportTest
         "TEPLIST_1_EP1_PORT" -> "7",
         "TEPLIST_1_EP2_HOST" -> "multilist-ep2-host1",
         "TEPLIST_1_EP2_PORT" -> "7",
+
+        "SOME_INT" -> "567",
       )
       //)
     )
@@ -309,6 +312,13 @@ object ConfigSupportTest
   test("Missing Configured[List[TwoEndpoints]]") {
     Configured[List[TwoEndpoints]].value(env, "TEPLISTx")
       .assertIs(ConfiguredError.MissingValue("TEPLISTx_COUNT").invalidNec)
+  }
+
+  test("Configured should handle newtypes") {
+    Configured[Int]
+      .map(i => s"int[$i]")
+      .value(env, "SOME_INT")
+      .assertIs("int[567]".validNec)
   }
 
 }
