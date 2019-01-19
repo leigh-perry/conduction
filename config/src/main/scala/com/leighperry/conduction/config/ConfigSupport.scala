@@ -125,7 +125,7 @@ object Configured {
           )
     }
 
-  implicit def `Functor for Configured`: Functor[Configured] =
+  implicit val `Functor for Configured`: Functor[Configured] =
     new Functor[Configured] {
       override def map[A, B](fa: Configured[A])(f: A => B): Configured[B] =
         new Configured[B] {
@@ -133,7 +133,6 @@ object Configured {
             fa.value(env, name)
               .map(f)
         }
-
     }
 
   private def eval[A](env: Environment, name: String, f: String => A): ValidatedNec[ConfiguredError, A] =
