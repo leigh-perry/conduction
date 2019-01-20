@@ -121,11 +121,11 @@ object Configured {
             Configured[F, A]
               .value(s"${name}_OPT")
               .run(env)
-              .flatMap {
+              .map {
                 _.fold(
                   c => if (c.forall(_.isInstanceOf[ConfiguredError.MissingValue])) None.validNec else c.invalid,
                   a => a.some.valid
-                ).pure[F]
+                )
               }
         }
     }
@@ -187,7 +187,6 @@ object Configured {
                       },
                   a => a.asLeft[B].validNec[ConfiguredError].pure[F]
                 )
-                // TODO check all pure/flatMap
               }
         }
     }
@@ -242,7 +241,6 @@ final class ConfiguredOps[F[_], A](val c: Configured[F, A]) extends AnyVal {
     new Configured[F, A] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, A]] =
         Kleisli {
-          // TODO combinator for this? not dimap...
           env =>
             c.value(s"${name}_$suffix")
               .run(env)

@@ -3,16 +3,17 @@ import sbt._
 object Dependencies {
   private object Version {
 
-    val cats = "1.4.0"
-    val catsEffect = "1.0.0"
+    val cats = "1.5.0"
+    val catsEffect = "1.1.0"
 
     val log4cats = "0.2.0"
 
-    val minitest = "2.2.2"
+    val minitest = "2.3.2"
     val scalacheck = "1.14.0"
   }
 
   val cats = "org.typelevel" %% "cats-core" % Version.cats
+  val catsLaws = "org.typelevel" %% "cats-laws" % Version.cats
   val catsFree = "org.typelevel" %% "cats-free" % Version.cats
   val catsEffect = "org.typelevel" %% "cats-effect" % Version.catsEffect
 
