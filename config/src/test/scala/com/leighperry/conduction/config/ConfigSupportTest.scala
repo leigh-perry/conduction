@@ -1,5 +1,6 @@
 package com.leighperry.conduction.config
 
+import cats.{Id, Monad}
 import cats.data.Validated
 import cats.syntax.apply._
 import cats.syntax.either._
@@ -21,7 +22,7 @@ object ConfigSupportTest
   test("Primitive String values") {
     check2 {
       (k: String, v: String) =>
-        Configured[String]
+        Configured[Id, String]
           .value(k)
           .run(fromMap(Map(k -> v)))
           .shouldBe(v.validNec)
@@ -31,7 +32,7 @@ object ConfigSupportTest
   test("Primitive Int values") {
     check2 {
       (k: String, v: Int) =>
-        Configured[Int]
+        Configured[Id, Int]
           .value(k)
           .run(fromMap(Map(k -> v.toString)))
           .shouldBe(v.validNec)
@@ -42,7 +43,7 @@ object ConfigSupportTest
     check2 {
       (k: String, v: String) =>
         val ok = s"${k}_OPT"
-        Configured[Option[String]]
+        Configured[Id, Option[String]]
           .value(k)
           .run(fromMap(Map(ok -> v)))
           .shouldBe(v.some.validNec)
@@ -53,7 +54,7 @@ object ConfigSupportTest
     check2 {
       (k: String, v: Int) =>
         val ok = s"${k}_OPT"
-        Configured[Option[Int]]
+        Configured[Id, Option[Int]]
           .value(k)
           .run(fromMap(Map(ok -> v.toString)))
           .shouldBe(v.some.validNec)
@@ -64,7 +65,7 @@ object ConfigSupportTest
     check2 {
       (k: String, v: String) =>
         val ok = s"${k}_OPT"
-        Configured[Option[String]]
+        Configured[Id, Option[String]]
           .value(s"${k}a")
           .run(fromMap(Map(ok -> v)))
           .shouldBe(None.validNec)
@@ -75,7 +76,7 @@ object ConfigSupportTest
     check2 {
       (k: String, v: Int) =>
         val ok = s"${k}_OPT"
-        Configured[Option[Int]]
+        Configured[Id, Option[Int]]
           .value(s"${k}a")
           .run(fromMap(Map(ok -> v.toString)))
           .shouldBe(None.validNec)
@@ -86,7 +87,7 @@ object ConfigSupportTest
     check2 {
       (k: String, v: Int) =>
         val ok = s"${k}_OPT"
-        Configured[Option[Int]]
+        Configured[Id, Option[Int]]
           .value(k)
           .run(fromMap(Map(ok -> s"${v.toString}x")))
           .shouldSatisfy {
@@ -103,35 +104,35 @@ object ConfigSupportTest
   final case class Endpoint(host: String, port: Int)
 
   object Endpoint {
-    implicit val `Configured for Endpoint`: Configured[Endpoint] = (
-      Configured[String].suffixed("HOST"),
-      Configured[Int].suffixed("PORT")
+    implicit def `Configured for Endpoint`[F[_]](implicit F: Monad[F]): Configured[F, Endpoint] = (
+      Configured[F, String].suffixed("HOST"),
+      Configured[F, Int].suffixed("PORT")
     ).mapN(Endpoint.apply)
   }
 
   final case class TwoEndpoints(ep1: Endpoint, ep2: Endpoint)
 
   object TwoEndpoints {
-    implicit val `Configured for TwoEndpoints`: Configured[TwoEndpoints] = (
-      Configured[Endpoint].suffixed("EP1"),
-      Configured[Endpoint].suffixed("EP2")
+    implicit def `Configured for TwoEndpoints`[F[_]](implicit F: Monad[F]): Configured[F, TwoEndpoints] = (
+      Configured[F, Endpoint].suffixed("EP1"),
+      Configured[F, Endpoint].suffixed("EP2")
     ).mapN(TwoEndpoints.apply)
   }
 
   final case class ThreeEndpoints(ep1: Endpoint, ep2: Endpoint, ep3: Endpoint)
 
   object ThreeEndpoints {
-    implicit val `Configured for ThreeEndpoints`: Configured[ThreeEndpoints] = (
-      Configured[Endpoint].suffixed("EP1"),
-      Configured[Endpoint].suffixed("EP2"),
-      Configured[Endpoint].suffixed("EP3"),
+    implicit def `Configured for ThreeEndpoints`[F[_]](implicit F: Monad[F]): Configured[F, ThreeEndpoints] = (
+      Configured[F, Endpoint].suffixed("EP1"),
+      Configured[F, Endpoint].suffixed("EP2"),
+      Configured[F, Endpoint].suffixed("EP3"),
     ).mapN(ThreeEndpoints.apply)
   }
 
   test("Present valid Double") {
     val k = "A_DOUBLE"
     val v = "1.23"
-    Configured[Double]
+    Configured[Id, Double]
       .value("A_DOUBLE")
       .run(fromMap(Map(k -> v)))
       .assertIs(1.23.validNec)
@@ -140,7 +141,7 @@ object ConfigSupportTest
   test("Missing valid Double") {
     val k = "A_DOUBLE"
     val v = "1.23"
-    Configured[Double]
+    Configured[Id, Double]
       .value("MISSING")
       .run(fromMap(Map(k -> v)))
       .assertIs(ConfiguredError.MissingValue("MISSING").invalidNec)
@@ -149,7 +150,7 @@ object ConfigSupportTest
   test("Invalid valid Double") {
     val k = "A_DOUBLE"
     val v = "1.23xxx"
-    Configured[Double].value(k)
+    Configured[Id, Double].value(k)
       .run(fromMap(Map(k -> v)))
       .assertIs(ConfiguredError.InvalidValue(k, v).invalidNec)
   }
@@ -207,22 +208,22 @@ object ConfigSupportTest
       //)
     )
 
-  test("Present valid Configured[Endpoint]") {
-    Configured[Endpoint]
+  test("Present valid Configured[Id, Endpoint]") {
+    Configured[Id, Endpoint]
       .value("LP1")
       .run(env)
       .assertIs(Endpoint("lp1-host", 1).validNec)
   }
 
-  test("Present valid Configured[TwoEndpoints]") {
-    Configured[TwoEndpoints]
+  test("Present valid Configured[Id, TwoEndpoints]") {
+    Configured[Id, TwoEndpoints]
       .value("MULTI")
       .run(env)
       .assertIs(TwoEndpoints(Endpoint("multi-ep1-host", 2), Endpoint("multi-ep2-host", 3)).validNec)
   }
 
-  test("Present valid Configured[ThreeEndpoints]") {
-    Configured[ThreeEndpoints]
+  test("Present valid Configured[Id, ThreeEndpoints]") {
+    Configured[Id, ThreeEndpoints]
       .value("MULTI")
       .run(env)
       .assertIs(
@@ -234,29 +235,29 @@ object ConfigSupportTest
       )
   }
 
-  test("Present valid Configured[Either[Endpoint, Endpoint]]") {
-    Configured[Either[Endpoint, Endpoint]]
+  test("Present valid Configured[Id, Either[Endpoint, Endpoint]]") {
+    Configured[Id, Either[Endpoint, Endpoint]]
       .value("CHOICE")
       .run(env)
       .assertIs(Endpoint("choice-c1-host", 5).asLeft.valid)
   }
 
-  test("Missing Configured[Either[Endpoint, Endpoint]]") {
-    Configured[Either[Endpoint, Endpoint]]
+  test("Missing Configured[Id, Either[Endpoint, Endpoint]]") {
+    Configured[Id, Either[Endpoint, Endpoint]]
       .value("CHOICE")
       .run(env)
       .assertIs(Endpoint("choice-c1-host", 5).asLeft.valid)
   }
 
-  test("Present valid Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]") {
-    Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]
+  test("Present valid Configured[Id, Either[Endpoint, Either[Endpoint, Endpoint]]]") {
+    Configured[Id, Either[Endpoint, Either[Endpoint, Endpoint]]]
       .value("CHOICE")
       .run(env)
       .assertIs(Endpoint("choice-c1-host", 5).asLeft.validNec)
   }
 
-  test("Missing Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]") {
-    Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]
+  test("Missing Configured[Id, Either[Endpoint, Either[Endpoint, Endpoint]]]") {
+    Configured[Id, Either[Endpoint, Either[Endpoint, Endpoint]]]
       .value("CHOICEx")
       .run(env)
       // NonEmptyChain doesn't support ==
@@ -286,50 +287,50 @@ object ConfigSupportTest
     )
   }
 
-  test("Present valid Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") {
-    Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]
+  test("Present valid Configured[Id, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") {
+    Configured[Id, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]
       .value("CHOICE")
       .run(env)
       .assertIs(Endpoint("choice-opt-c2-c1-host", 9).asLeft.asRight.some.valid)
   }
 
-  test("Missing Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") {
-    Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]
+  test("Missing Configured[Id, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") {
+    Configured[Id, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]
       .value("CHOICEx")
       .run(env)
       .assertIs(None.validNec)
   }
 
-  test("Present valid Configured[List[Int]]") {
-    Configured[List[Int]]
+  test("Present valid Configured[Id, List[Int]]") {
+    Configured[Id, List[Int]]
       .value("INTLIST")
       .run(env)
       .assertIs(List(1000, 1001, 1002).validNec)
   }
 
-  test("Missing Configured[List[Int]]") {
-    Configured[List[Int]]
+  test("Missing Configured[Id, List[Int]]") {
+    Configured[Id, List[Int]]
       .value("INTLISTx")
       .run(env)
       .assertIs(ConfiguredError.MissingValue("INTLISTx_COUNT").invalidNec)
   }
 
-  test("Present valid Configured[List[Endpoint]]") {
-    Configured[List[Endpoint]]
+  test("Present valid Configured[Id, List[Endpoint]]") {
+    Configured[Id, List[Endpoint]]
       .value("EPLIST")
       .run(env)
       .assertIs(List(Endpoint("eplist0-host", 2), Endpoint("eplist1-host", 3)).validNec)
   }
 
-  test("Missing Configured[List[Endpoint]]") {
-    Configured[List[Endpoint]]
+  test("Missing Configured[Id, List[Endpoint]]") {
+    Configured[Id, List[Endpoint]]
       .value("EPLISTx")
       .run(env)
       .assertIs(ConfiguredError.MissingValue("EPLISTx_COUNT").invalidNec)
   }
 
-  test("Present valid Configured[List[TwoEndpoints]]") {
-    Configured[List[TwoEndpoints]]
+  test("Present valid Configured[Id, List[TwoEndpoints]]") {
+    Configured[Id, List[TwoEndpoints]]
       .value("TEPLIST")
       .run(env)
       .assertIs(
@@ -340,15 +341,15 @@ object ConfigSupportTest
       )
   }
 
-  test("Missing Configured[List[TwoEndpoints]]") {
-    Configured[List[TwoEndpoints]]
+  test("Missing Configured[Id, List[TwoEndpoints]]") {
+    Configured[Id, List[TwoEndpoints]]
       .value("TEPLISTx")
       .run(env)
       .assertIs(ConfiguredError.MissingValue("TEPLISTx_COUNT").invalidNec)
   }
 
   test("Configured should handle newtypes") {
-    Configured[Int]
+    Configured[Id, Int]
       .map(i => s"int[$i]")
       .value("SOME_INT")
       .run(env)
