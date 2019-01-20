@@ -70,6 +70,11 @@ trait Configured[F[_], A] {
 object Configured {
   def apply[F[_], A](implicit F: Configured[F, A]): Configured[F, A] = F
 
+  def apply[F[_], A](name: String)(
+    implicit F: Configured[F, A]
+  ): Kleisli[F, Environment, ValidatedNec[ConfiguredError, A]] =
+    F.value(name)
+
   implicit def `Configured for Int`[F[_] : Applicative]: Configured[F, Int] =
     new Configured[F, Int] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Int]] =
@@ -118,8 +123,7 @@ object Configured {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Option[A]]] =
         Kleisli {
           env =>
-            Configured[F, A]
-              .value(s"${name}_OPT")
+            Configured[F, A](s"${name}_OPT")
               .run(env)
               .map {
                 _.fold(
@@ -138,8 +142,7 @@ object Configured {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, List[A]]] =
         Kleisli {
           env =>
-            Configured[F, Int]
-              .value(s"${name}_COUNT")
+            Configured[F, Int](s"${name}_COUNT")
               .run(env)
               .flatMap {
                 _.fold(
@@ -148,8 +151,7 @@ object Configured {
                     List.tabulate(n)(identity)
                       .traverse {
                         i =>
-                          Configured[F, A]
-                            .value(s"${name}_$i")
+                          Configured[F, A](s"${name}_$i")
                             .run(env)
                       }.map {
                       list: List[ValidatedNec[ConfiguredError, A]] =>
@@ -170,14 +172,12 @@ object Configured {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Either[A, B]]] =
         Kleisli {
           env =>
-            Configured[F, A]
-              .value(s"${name}_C1")
+            Configured[F, A](s"${name}_C1")
               .run(env)
               .flatMap {
                 _.fold(
                   errors1 =>
-                    Configured[F, B]
-                      .value(s"${name}_C2")
+                    Configured[F, B](s"${name}_C2")
                       .run(env)
                       .map {
                         _.fold(
