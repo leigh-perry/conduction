@@ -152,12 +152,12 @@ object Configured {
               .value(s"${name}_C1")
               .run(env)
               .fold(
-                valid1 =>
+                errors1 =>
                   Configured[B]
                     .value(s"${name}_C2")
                     .run(env)
                     .fold(
-                      valid2 => (valid1 ++ valid2).invalid[Either[A, B]],
+                      errors2 => (errors1 ++ errors2).invalid[Either[A, B]],
                       b => b.asRight[A].valid
                     ),
                 a => a.asLeft[B].valid
@@ -182,40 +182,16 @@ object Configured {
                 Apply[ValidatedNec[ConfiguredError, ?]]
                   .map2[A, A => B, B](
                   fa.value(name).run(env),
-                  ff.value(name).run(env) // TODO name ignored
+                  ff.value(name).run(env)
                 ) {
                   (a: A, a2b: A => B) =>
                     a2b(a)
                 }
-            }
+             }
         }
     }
 
-  //  implicit val `Monad for Configured`: Monad[Configured] =
-  //    new Monad[Configured] {
-  //      override def pure[A](a: A): Configured[A] =
-  //        new Configured[A] {
-  //          override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, A]] =
-  //            Reader(_ => a.validNec)
-  //        }
-  //
-  //      override def flatMap[A, B](fa: Configured[A])(f: A => Configured[B]): Configured[B] =
-  //        new Configured[B] {
-  //          override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, B]] =
-  //            Reader {
-  //              env =>
-  //                fa.value.run(env -> name)
-  //                .map {
-  //                  a =>
-  //                    f(a).value.run
-  //                }
-  //
-  //
-  //            }
-  //        }
-  //      override def tailRecM[A, B](a: A)(f: A => Configured[Either[A, B]]): Configured[B] =
-  //        ???
-  //    }
+  // TODO test laws
 
   private def eval[A](env: Environment, name: String, f: String => A): ValidatedNec[ConfiguredError, A] =
     env.get(name)
