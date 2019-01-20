@@ -8,7 +8,7 @@ lazy val commonSettings =
     Seq(
       name := projectName,
       organization := "com.leighperry",
-      scalaVersion := "2.12.7"
+      scalaVersion := "2.12.8"
     )
 
 val tests = "compile->compile;test->test"
@@ -23,7 +23,9 @@ lazy val config =
         log4catsSlf4j,
         minitest % "test",
         minitestLaws % "test",
-        scalacheck % "test"
+        scalacheck % "test",
+        catsLaws % "test",
+        "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.8" % Test
       )
     )
 
@@ -44,6 +46,6 @@ def module(id: String, settings: Seq[Def.Setting[_]] = commonSettings, deps: Seq
     .settings(settings)
     .settings(
       name := s"$projectName-$id",
-      libraryDependencies ++= deps ++ Seq("org.scala-lang" % "scala-reflect" % "2.12.7")
+      libraryDependencies ++= deps ++ Seq("org.scala-lang" % "scala-reflect" % "2.12.8")
     )
 }

@@ -46,7 +46,7 @@ object ProjectDefaults {
 
   val settings =
     Seq(
-      scalaVersion := "2.12.7",
+      scalaVersion := "2.12.8",
 
       scalacOptions ++=
         Seq(
@@ -105,7 +105,7 @@ object ProjectDefaults {
           catsEffect
         ),
 
-      addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.8" cross CrossVersion.binary),
+      addCompilerPlugin("org.spire-math" % "kind-projector" % "0.9.9" cross CrossVersion.binary),
       addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")
     )
 
