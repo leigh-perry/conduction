@@ -6,7 +6,7 @@ import cats.syntax.either._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.syntax.validated._
-import cats.{Functor, Show}
+import cats.{Applicative, Apply, Show}
 
 
 /**
@@ -60,7 +60,7 @@ object Environment {
 ////
 
 trait Configured[A] {
-  def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, A]]
+  def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, A]]
 }
 
 object Configured {
@@ -68,92 +68,154 @@ object Configured {
 
   implicit val `Configured for Int`: Configured[Int] =
     new Configured[Int] {
-      override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, Int]] =
-        Reader(eval[Int](_, name, _.toInt))
+      override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, Int]] =
+        Reader {
+          case (env, name) =>
+            eval[Int](env, name, _.toInt)
+        }
     }
 
   implicit val `Configured for Long`: Configured[Long] =
     new Configured[Long] {
-      override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, Long]] =
-        Reader(eval[Long](_, name, _.toLong))
+      override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, Long]] =
+        Reader {
+          case (env, name) =>
+            eval[Long](env, name, _.toLong)
+        }
     }
 
   implicit val `Configured for Double`: Configured[Double] =
     new Configured[Double] {
-      override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, Double]] =
-        Reader(eval[Double](_, name, _.toDouble))
+      override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, Double]] =
+        Reader {
+          case (env, name) =>
+            eval[Double](env, name, _.toDouble)
+        }
     }
 
   implicit val `Configured for String`: Configured[String] =
     new Configured[String] {
-      override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, String]] =
-        Reader(eval[String](_, name, identity))
+      override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, String]] =
+        Reader {
+          case (env, name) =>
+            eval[String](env, name, identity)
+        }
     }
 
   implicit def `Configured for Option`[A: Configured]: Configured[Option[A]] =
     new Configured[Option[A]] {
-      override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, Option[A]]] =
-        Configured[A]
-          .value(s"${name}_OPT")
-          .map {
-            _.fold(
-              c => if (c.forall(_.isInstanceOf[ConfiguredError.MissingValue])) None.validNec else c.invalid,
-              a => a.some.valid
-            )
-          }
+      override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, Option[A]]] =
+        Reader {
+          case (env, name) =>
+            Configured[A]
+              .value
+              .run(env -> s"${name}_OPT")
+              .fold(
+                c => if (c.forall(_.isInstanceOf[ConfiguredError.MissingValue])) None.validNec else c.invalid,
+                a => a.some.valid
+              )
+        }
     }
 
   implicit def `Configured for List`[A: Configured]: Configured[List[A]] =
     new Configured[List[A]] {
-      override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, List[A]]] =
-        Configured[Int]
-          .value(s"${name}_COUNT")
-          .flatMap {
-            _.fold(
-              c => Reader(_ => c.invalid),
-              n =>
-                List.tabulate(n)(identity) // 0..n toList
-                  .traverse(i => Configured[A].value(s"${name}_$i"))
-                  .map {
-                    list: List[ValidatedNec[ConfiguredError, A]] =>
-                      list.sequence
-                  }
-            )
-          }
+      override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, List[A]]] =
+        Reader {
+          case (env, name) =>
+            Configured[Int]
+              .value
+              .run(env -> s"${name}_COUNT")
+              .fold(
+                c => c.invalid,
+                n => {
+                  // 0..n toList
+                  val list: List[ValidatedNec[ConfiguredError, A]] =
+                    List.tabulate(n)(identity)
+                      .traverse {
+                        i =>
+                          Configured[A]
+                            .value
+                            .run(env -> s"${name}_$i")
+                      }
+                  list.sequence // inline gives compilation error :-(
+                }
+              )
+        }
     }
 
   implicit def `Configured for Either`[A: Configured, B: Configured]: Configured[Either[A, B]] =
     new Configured[Either[A, B]] {
-      override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, Either[A, B]]] =
-        Configured[A]
-          .value(s"${name}_C1")
-          .flatMap {
-            _.fold(
-              c1 =>
-                Configured[B]
-                  .value(s"${name}_C2")
-                  .map {
-                    _.fold(
-                      c2 => (c1 ++ c2).invalid[Either[A, B]],
+      override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, Either[A, B]]] =
+        Reader {
+          case (env, name) =>
+            Configured[A]
+              .value
+              .run(env -> s"${name}_C1")
+              .fold(
+                valid1 =>
+                  Configured[B]
+                    .value
+                    .run(env -> s"${name}_C2")
+                    .fold(
+                      valid2 => (valid1 ++ valid2).invalid[Either[A, B]],
                       b => b.asRight[A].valid
-                    )
-                  },
-              a => Reader(_ => a.asLeft[B].valid)
-            )
-          }
-    }
-
-  implicit val `Functor for Configured`: Functor[Configured] =
-    new Functor[Configured] {
-      override def map[A, B](fa: Configured[A])(f: A => B): Configured[B] =
-        new Configured[B] {
-          override def value(name: String): Reader[Environment, ValidatedNec[ConfiguredError, B]] =
-            fa.value(name)
-              .map {
-                _.map(f)
-              }
+                    ),
+                a => a.asLeft[B].valid
+              )
         }
     }
+
+  implicit val `Applicative for Configured`: Applicative[Configured] =
+    new Applicative[Configured] {
+      override def pure[A](a: A): Configured[A] =
+        new Configured[A] {
+          override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, A]] =
+            Reader(_ => a.validNec)
+        }
+
+      override def ap[A, B](ff: Configured[A => B])(fa: Configured[A]): Configured[B] =
+        new Configured[B] {
+          override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, B]] =
+            Reader {
+              // TODO run = smell
+              envName =>
+                Apply[ValidatedNec[ConfiguredError, ?]]
+                  .map2[A, A => B, B](
+                  fa.value.run(envName),
+                  ff.value.run(envName)
+                ) {
+                  (a: A, a2b: A => B) =>
+                    a2b(a)
+                }
+            }
+        }
+    }
+
+  //  implicit val `Monad for Configured`: Monad[Configured] =
+  //    new Monad[Configured] {
+  //      override def pure[A](a: A): Configured[A] =
+  //        new Configured[A] {
+  //          override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, A]] =
+  //            Reader(_ => a.validNec)
+  //        }
+  //
+  //      override def flatMap[A, B](fa: Configured[A])(f: A => Configured[B]): Configured[B] =
+  //        new Configured[B] {
+  //          override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, B]] =
+  //            Reader {
+  //              case (env, name) =>
+  //                fa.value.run(env -> name)
+  //                .map {
+  //                  a =>
+  //                    f(a).value.run
+  //                }
+  //
+  //
+  //            }
+  //        }
+  //      override def tailRecM[A, B](a: A)(f: A => Configured[Either[A, B]]): Configured[B] =
+  //        ???
+  //    }
 
   private def eval[A](env: Environment, name: String, f: String => A): ValidatedNec[ConfiguredError, A] =
     env.get(name)
@@ -171,8 +233,16 @@ object Configured {
 ////
 
 final class ConfiguredOps[A](val c: Configured[A]) extends AnyVal {
-  def valueSuffixed(name: String, suffix: String): Reader[Environment, ValidatedNec[ConfiguredError, A]] =
-    c.value(s"${name}_$suffix")
+  def suffixed(suffix: String): Configured[A] =
+    new Configured[A] {
+      override def value: Reader[(Environment, String), ValidatedNec[ConfiguredError, A]] =
+        Reader {
+          // TODO combinator for this? not dimap...
+          case (env, name) =>
+            c.value
+              .run(env -> s"${name}_$suffix")
+        }
+    }
 }
 
 trait ToConfiguredOps {
@@ -182,11 +252,3 @@ trait ToConfiguredOps {
 
 object configuredinstances
   extends ToConfiguredOps
-
-////
-
-object ConfigSupport
-  extends ToConfiguredOps {
-
-  // TODO remove
-}
