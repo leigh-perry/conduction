@@ -208,22 +208,22 @@ object ConfigSupportTest
     )
 
   test("Present valid Configured[Endpoint]") {
-    Configured[Endpoint].
-      value
+    Configured[Endpoint]
+      .value
       .run(env -> "LP1")
       .assertIs(Endpoint("lp1-host", 1).validNec)
   }
 
   test("Present valid Configured[TwoEndpoints]") {
-    Configured[TwoEndpoints].
-      value
+    Configured[TwoEndpoints]
+      .value
       .run(env -> "MULTI")
       .assertIs(TwoEndpoints(Endpoint("multi-ep1-host", 2), Endpoint("multi-ep2-host", 3)).validNec)
   }
 
   test("Present valid Configured[ThreeEndpoints]") {
-    Configured[ThreeEndpoints].
-      value
+    Configured[ThreeEndpoints]
+      .value
       .run(env -> "MULTI")
       .assertIs(
         ThreeEndpoints(
@@ -235,29 +235,29 @@ object ConfigSupportTest
   }
 
   test("Present valid Configured[Either[Endpoint, Endpoint]]") {
-    Configured[Either[Endpoint, Endpoint]].
-      value
+    Configured[Either[Endpoint, Endpoint]]
+      .value
       .run(env -> "CHOICE")
       .assertIs(Endpoint("choice-c1-host", 5).asLeft.valid)
   }
 
   test("Missing Configured[Either[Endpoint, Endpoint]]") {
-    Configured[Either[Endpoint, Endpoint]].
-      value
+    Configured[Either[Endpoint, Endpoint]]
+      .value
       .run(env -> "CHOICE")
       .assertIs(Endpoint("choice-c1-host", 5).asLeft.valid)
   }
 
   test("Present valid Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]") {
-    Configured[Either[Endpoint, Either[Endpoint, Endpoint]]].
-      value
+    Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]
+      .value
       .run(env -> "CHOICE")
       .assertIs(Endpoint("choice-c1-host", 5).asLeft.validNec)
   }
 
   test("Missing Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]") {
-    Configured[Either[Endpoint, Either[Endpoint, Endpoint]]].
-      value
+    Configured[Either[Endpoint, Either[Endpoint, Endpoint]]]
+      .value
       .run(env -> "CHOICEx")
       // NonEmptyChain doesn't support ==
       //      .assertIsEq(
@@ -287,50 +287,50 @@ object ConfigSupportTest
   }
 
   test("Present valid Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") {
-    Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]].
-      value
+    Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]
+      .value
       .run(env -> "CHOICE")
       .assertIs(Endpoint("choice-opt-c2-c1-host", 9).asLeft.asRight.some.valid)
   }
 
   test("Missing Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") {
-    Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]].
-      value
+    Configured[Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]
+      .value
       .run(env -> "CHOICEx")
       .assertIs(None.validNec)
   }
 
   test("Present valid Configured[List[Int]]") {
-    Configured[List[Int]].
-      value
+    Configured[List[Int]]
+      .value
       .run(env -> "INTLIST")
       .assertIs(List(1000, 1001, 1002).validNec)
   }
 
   test("Missing Configured[List[Int]]") {
-    Configured[List[Int]].
-      value
+    Configured[List[Int]]
+      .value
       .run(env -> "INTLISTx")
       .assertIs(ConfiguredError.MissingValue("INTLISTx_COUNT").invalidNec)
   }
 
   test("Present valid Configured[List[Endpoint]]") {
-    Configured[List[Endpoint]].
-      value
+    Configured[List[Endpoint]]
+      .value
       .run(env -> "EPLIST")
       .assertIs(List(Endpoint("eplist0-host", 2), Endpoint("eplist1-host", 3)).validNec)
   }
 
   test("Missing Configured[List[Endpoint]]") {
-    Configured[List[Endpoint]].
-      value
+    Configured[List[Endpoint]]
+      .value
       .run(env -> "EPLISTx")
       .assertIs(ConfiguredError.MissingValue("EPLISTx_COUNT").invalidNec)
   }
 
   test("Present valid Configured[List[TwoEndpoints]]") {
-    Configured[List[TwoEndpoints]].
-      value
+    Configured[List[TwoEndpoints]]
+      .value
       .run(env -> "TEPLIST")
       .assertIs(
         List(
@@ -341,8 +341,8 @@ object ConfigSupportTest
   }
 
   test("Missing Configured[List[TwoEndpoints]]") {
-    Configured[List[TwoEndpoints]].
-      value
+    Configured[List[TwoEndpoints]]
+      .value
       .run(env -> "TEPLISTx")
       .assertIs(ConfiguredError.MissingValue("TEPLISTx_COUNT").invalidNec)
   }
