@@ -10,7 +10,7 @@ import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.syntax.validated._
-import cats.{Applicative, Monad, Show}
+import cats.{Applicative, Functor, Monad, Show}
 
 
 /**
@@ -64,7 +64,31 @@ object Environment {
 ////
 
 trait Configured[F[_], A] {
+  self =>
+
   def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, A]]
+
+  def withSuffix(suffix: String): Configured[F, A] =
+    new Configured[F, A] {
+      override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, A]] =
+        Kleisli {
+          env =>
+            self.value(name = s"${name}_$suffix")
+              .run(env)
+        }
+    }
+
+  def andThen[B](f: A => ValidatedNec[ConfiguredError, B])(implicit F: Functor[F]): Configured[F, B] =
+    new Configured[F, B] {
+      override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, B]] =
+        Kleisli {
+          env =>
+            self.value(name)
+              .run(env)
+              .map(_.andThen(f))
+        }
+    }
+
 }
 
 object Configured {
@@ -75,7 +99,7 @@ object Configured {
   ): Kleisli[F, Environment, ValidatedNec[ConfiguredError, A]] =
     F.value(name)
 
-  implicit def `Configured for Int`[F[_] : Applicative]: Configured[F, Int] =
+  implicit def configuredInt[F[_] : Applicative]: Configured[F, Int] =
     new Configured[F, Int] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Int]] =
         Kleisli {
@@ -85,7 +109,7 @@ object Configured {
         }
     }
 
-  implicit def `Configured for Long`[F[_] : Applicative]: Configured[F, Long] =
+  implicit def configuredLong[F[_] : Applicative]: Configured[F, Long] =
     new Configured[F, Long] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Long]] =
         Kleisli {
@@ -95,7 +119,7 @@ object Configured {
         }
     }
 
-  implicit def `Configured for Double`[F[_] : Applicative]: Configured[F, Double] =
+  implicit def configuredDouble[F[_] : Applicative]: Configured[F, Double] =
     new Configured[F, Double] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Double]] =
         Kleisli {
@@ -105,7 +129,7 @@ object Configured {
         }
     }
 
-  implicit def `Configured for String`[F[_] : Applicative]: Configured[F, String] =
+  implicit def configuredString[F[_] : Applicative]: Configured[F, String] =
     new Configured[F, String] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, String]] =
         Kleisli {
@@ -115,7 +139,7 @@ object Configured {
         }
     }
 
-  implicit def `Configured for Option`[F[_], A](
+  implicit def configuredOption[F[_], A](
     implicit F: Monad[F],
     A: Configured[F, A]
   ): Configured[F, Option[A]] =
@@ -134,7 +158,7 @@ object Configured {
         }
     }
 
-  implicit def `Configured for List`[F[_], A](
+  implicit def configuredList[F[_], A](
     implicit F: Monad[F],
     A: Configured[F, A]
   ): Configured[F, List[A]] =
@@ -163,7 +187,7 @@ object Configured {
         }
     }
 
-  implicit def `Configured for Either`[F[_], A, B](
+  implicit def configuredEither[F[_], A, B](
     implicit F: Monad[F],
     A: Configured[F, A],
     B: Configured[F, B]
@@ -191,7 +215,7 @@ object Configured {
         }
     }
 
-  implicit def `Applicative for Configured`[F[_], AA](implicit F: Monad[F]): Applicative[Configured[F, ?]] =
+  implicit def applicativeConfigured[F[_], AA](implicit F: Monad[F]): Applicative[Configured[F, ?]] =
     new Applicative[Configured[F, ?]] {
       override def pure[A](a: A): Configured[F, A] =
         new Configured[F, A] {
@@ -203,7 +227,6 @@ object Configured {
         new Configured[F, B] {
           override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, B]] =
             Kleisli {
-              // TODO alternative to invoking run?
               env =>
                 (
                   ca.value(name).run(env),
@@ -233,25 +256,3 @@ object Configured {
       }.getOrElse(ConfiguredError.MissingValue(name).invalidNec[A])
 
 }
-
-////
-
-final class ConfiguredOps[F[_], A](val c: Configured[F, A]) extends AnyVal {
-  def suffixed(suffix: String): Configured[F, A] =
-    new Configured[F, A] {
-      override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, A]] =
-        Kleisli {
-          env =>
-            c.value(s"${name}_$suffix")
-              .run(env)
-        }
-    }
-}
-
-trait ToConfiguredOps {
-  implicit def `Ops for Configured`[F[_], A](e: Configured[F, A]): ConfiguredOps[F, A] =
-    new ConfiguredOps[F, A](e)
-}
-
-object configuredinstances
-  extends ToConfiguredOps

@@ -17,7 +17,6 @@ object ConfigSupportTest
     with TestSupport {
 
   import Environment._
-  import configuredinstances._
 
   test("Primitive String values") {
     check2 {
@@ -40,9 +39,8 @@ object ConfigSupportTest
   test("Present Option[String] values") {
     check2 {
       (k: String, v: String) =>
-        val ok = s"${k}_OPT"
         Configured[Id, Option[String]](k)
-          .run(fromMap(Map(ok -> v)))
+          .run(fromMap(Map(s"${k}_OPT" -> v)))
           .shouldBe(v.some.validNec)
     }
   }
@@ -50,9 +48,8 @@ object ConfigSupportTest
   test("Present Option[Int] values") {
     check2 {
       (k: String, v: Int) =>
-        val ok = s"${k}_OPT"
         Configured[Id, Option[Int]](k)
-          .run(fromMap(Map(ok -> v.toString)))
+          .run(fromMap(Map(s"${k}_OPT" -> v.toString)))
           .shouldBe(v.some.validNec)
     }
   }
@@ -60,9 +57,8 @@ object ConfigSupportTest
   test("Missing Option[String] values") {
     check2 {
       (k: String, v: String) =>
-        val ok = s"${k}_OPT"
         Configured[Id, Option[String]](s"${k}a")
-          .run(fromMap(Map(ok -> v)))
+          .run(fromMap(Map(s"${k}_OPT" -> v)))
           .shouldBe(None.validNec)
     }
   }
@@ -70,9 +66,8 @@ object ConfigSupportTest
   test("Missing Option[Int] values") {
     check2 {
       (k: String, v: Int) =>
-        val ok = s"${k}_OPT"
         Configured[Id, Option[Int]](s"${k}a")
-          .run(fromMap(Map(ok -> v.toString)))
+          .run(fromMap(Map(s"${k}_OPT" -> v.toString)))
           .shouldBe(None.validNec)
     }
   }
@@ -80,9 +75,8 @@ object ConfigSupportTest
   test("Misconfigured Option[Int] values") {
     check2 {
       (k: String, v: Int) =>
-        val ok = s"${k}_OPT"
         Configured[Id, Option[Int]](k)
-          .run(fromMap(Map(ok -> s"${v.toString}x")))
+          .run(fromMap(Map(s"${k}_OPT" -> s"${v.toString}x")))
           .shouldSatisfy {
             case Validated.Invalid(nec) =>
               nec.length.shouldBe(1) &&
@@ -90,36 +84,6 @@ object ConfigSupportTest
             case _ => false
           }
     }
-  }
-
-  ////
-
-  final case class Endpoint(host: String, port: Int)
-
-  object Endpoint {
-    implicit def `Configured for Endpoint`[F[_]](implicit F: Monad[F]): Configured[F, Endpoint] = (
-      Configured[F, String].suffixed("HOST"),
-      Configured[F, Int].suffixed("PORT")
-    ).mapN(Endpoint.apply)
-  }
-
-  final case class TwoEndpoints(ep1: Endpoint, ep2: Endpoint)
-
-  object TwoEndpoints {
-    implicit def `Configured for TwoEndpoints`[F[_]](implicit F: Monad[F]): Configured[F, TwoEndpoints] = (
-      Configured[F, Endpoint].suffixed("EP1"),
-      Configured[F, Endpoint].suffixed("EP2")
-    ).mapN(TwoEndpoints.apply)
-  }
-
-  final case class ThreeEndpoints(ep1: Endpoint, ep2: Endpoint, ep3: Endpoint)
-
-  object ThreeEndpoints {
-    implicit def `Configured for ThreeEndpoints`[F[_]](implicit F: Monad[F]): Configured[F, ThreeEndpoints] = (
-      Configured[F, Endpoint].suffixed("EP1"),
-      Configured[F, Endpoint].suffixed("EP2"),
-      Configured[F, Endpoint].suffixed("EP3"),
-    ).mapN(ThreeEndpoints.apply)
   }
 
   test("Present valid Double") {
@@ -330,6 +294,36 @@ object ConfigSupportTest
       .value("SOME_INT")
       .run(env)
       .assertIs("int[567]".validNec)
+  }
+
+  ////
+
+  final case class Endpoint(host: String, port: Int)
+
+  object Endpoint {
+    implicit def `Configured for Endpoint`[F[_]](implicit F: Monad[F]): Configured[F, Endpoint] = (
+      Configured[F, String].withSuffix("HOST"),
+      Configured[F, Int].withSuffix("PORT")
+    ).mapN(Endpoint.apply)
+  }
+
+  final case class TwoEndpoints(ep1: Endpoint, ep2: Endpoint)
+
+  object TwoEndpoints {
+    implicit def `Configured for TwoEndpoints`[F[_]](implicit F: Monad[F]): Configured[F, TwoEndpoints] = (
+      Configured[F, Endpoint].withSuffix("EP1"),
+      Configured[F, Endpoint].withSuffix("EP2")
+    ).mapN(TwoEndpoints.apply)
+  }
+
+  final case class ThreeEndpoints(ep1: Endpoint, ep2: Endpoint, ep3: Endpoint)
+
+  object ThreeEndpoints {
+    implicit def `Configured for ThreeEndpoints`[F[_]](implicit F: Monad[F]): Configured[F, ThreeEndpoints] = (
+      Configured[F, Endpoint].withSuffix("EP1"),
+      Configured[F, Endpoint].withSuffix("EP2"),
+      Configured[F, Endpoint].withSuffix("EP3"),
+    ).mapN(ThreeEndpoints.apply)
   }
 
 }
