@@ -15,6 +15,7 @@ import cats.{Applicative, Functor, Monad, Show}
   * Support for reading detailed, nested configuration from environment variables etc
   */
 
+////
 
 trait Conversion[A] {
   def of(s: String): Either[String, A]
@@ -37,7 +38,7 @@ object Conversion {
 
   private def eval[A](s: String, f: String => A): Either[String, A] = {
     Either.catchNonFatal(f(s))
-      .leftMap(t => t.getMessage)
+      .leftMap(_ => s)
   }
 }
 
@@ -130,7 +131,7 @@ object Configured {
                 s =>
                   Conversion[A].of(s)
                     .fold(
-                      ConfiguredError.InvalidValue(name, _).invalidNec[A],
+                      error => ConfiguredError.InvalidValue(name, error).invalidNec[A],
                       _.validNec[ConfiguredError]
                     )
               }.getOrElse(ConfiguredError.MissingValue(name).invalidNec[A])
