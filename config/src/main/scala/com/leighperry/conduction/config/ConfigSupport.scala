@@ -108,7 +108,6 @@ trait Configured[F[_], A] {
         self.value(name)
           .mapF(_.map(_.andThen(f)))
     }
-
 }
 
 object Configured {
@@ -197,7 +196,7 @@ object Configured {
 
   ////
 
-  implicit def applicativeConfigured[F[_], AA](implicit F: Applicative[F]): Applicative[Configured[F, ?]] =
+  implicit def applicativeConfigured[F[_]](implicit F: Applicative[F]): Applicative[Configured[F, ?]] =
     new Applicative[Configured[F, ?]] {
       override def pure[A](a: A): Configured[F, A] =
         new Configured[F, A] {
