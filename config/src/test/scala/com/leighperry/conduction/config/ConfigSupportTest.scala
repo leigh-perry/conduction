@@ -107,7 +107,7 @@ object ConfigSupportTest
     val v = "1.23xxx"
     Configured[Id, Double](k)
       .run(fromMap(Map(k -> v)))
-      .assertIs(ConfiguredError.InvalidValue(k, v).invalidNec)
+      .assertIs(ConfiguredError.InvalidValue(k, "For input string: \"1.23xxx\"").invalidNec)
   }
 
 
