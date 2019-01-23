@@ -36,6 +36,12 @@ object Conversion {
   implicit val conversionString: Conversion[String] =
     (s: String) => s.asRight
 
+  implicit val functorConversion: Functor[Conversion] =
+    new Functor[Conversion] {
+      override def map[A, B](fa: Conversion[A])(f: A => B): Conversion[B] =
+        (s: String) => fa.of(s).map(f)
+    }
+
   private def eval[A](s: String, f: String => A): Either[String, A] = {
     Either.catchNonFatal(f(s))
       .leftMap(_ => s)
@@ -138,7 +144,7 @@ object Configured {
         }
     }
 
-  implicit def configuredOption[F[_], A](implicit F: Monad[F], A: Configured[F, A]): Configured[F, Option[A]] =
+  implicit def configuredOption[F[_], A](implicit F: Functor[F], A: Configured[F, A]): Configured[F, Option[A]] =
     new Configured[F, Option[A]] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Option[A]]] =
         Configured[F, A](s"${name}_OPT")
