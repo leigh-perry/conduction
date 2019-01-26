@@ -7,7 +7,6 @@ import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
 import cats.{Applicative, Id}
-import com.leighperry.conduction.config.X.ConfiguredSyntax
 import com.leighperry.conduction.config.testsupport.TestSupport
 import minitest.SimpleTestSuite
 import minitest.laws.Checkers
@@ -229,7 +228,8 @@ object ConfigSupportTest
   //      "CHOICE2_C2_HOST" -> "choice-c1-host",
   //      "CHOICE2_C2_PORT" -> "5",
   test("Present valid Configured[Id, Either[Either[Endpoint, Endpoint]], Endpoint] left/left via `or` syntax") {
-    Configured[Id, Either[Endpoint, Endpoint]]
+    Configured[Id, Endpoint]
+      .or(Configured[Id, Endpoint])
       .or(Configured[Id, Endpoint])
       .value("CHOICE2")
       .run(env)
@@ -237,7 +237,8 @@ object ConfigSupportTest
   }
 
   test("Present valid Configured[Id, Either[Either[Endpoint, Endpoint]], Endpoint] left/right via `or` syntax") {
-    Configured[Id, Either[Endpoint, Endpoint]]
+    Configured[Id, Endpoint]
+      .or(Configured[Id, Endpoint])
       .or(Configured[Id, Endpoint])
       .value("CHOICE2")
       .run(reducedEnv("CHOICE2_C1_C1_HOST", "CHOICE2_C1_C1_PORT"))
@@ -245,7 +246,8 @@ object ConfigSupportTest
   }
 
   test("Present valid Configured[Id, Either[Either[Endpoint, Endpoint]], Endpoint] right via `or` syntax") {
-    Configured[Id, Either[Endpoint, Endpoint]]
+    Configured[Id, Endpoint]
+      .or(Configured[Id, Endpoint])
       .or(Configured[Id, Endpoint])
       .value("CHOICE2")
       .run(reducedEnv("CHOICE2_C1_C1_HOST", "CHOICE2_C1_C1_PORT", "CHOICE2_C1_C2_HOST", "CHOICE2_C1_C2_PORT"))
