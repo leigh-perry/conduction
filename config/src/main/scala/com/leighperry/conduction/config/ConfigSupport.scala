@@ -182,13 +182,18 @@ object Configured {
     A: Configured[F, A],
     B: Configured[F, B]
   ): Configured[F, Either[A, B]] =
+    eitherOf(A, B)
+  
+  ////
+
+  def eitherOf[F[_] : Monad, A, B](ca: Configured[F, A], cb: Configured[F, B]): Configured[F, Either[A, B]] =
     new Configured[F, Either[A, B]] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Either[A, B]]] =
-        Configured[F, A](s"${name}_C1")
+        ca.value(s"${name}_C1")
           .flatMap {
             _.fold(
               errors1 =>
-                Configured[F, B](s"${name}_C2")
+                cb.value(s"${name}_C2")
                   .map {
                     _.fold(
                       errors2 => (errors1 ++ errors2).invalid[Either[A, B]],
@@ -237,24 +242,7 @@ object Configured {
 
 final class ConfiguredABSyntaxOps[F[_] : Monad, A](ca: Configured[F, A]) {
   def or[B](cb: Configured[F, B]): Configured[F, Either[A, B]] =
-  // TODO very similar code
-    new Configured[F, Either[A, B]] {
-      override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Either[A, B]]] =
-        ca.value(s"${name}_C1")
-          .flatMap {
-            _.fold(
-              errors1 =>
-                cb.value(s"${name}_C2")
-                  .map {
-                    _.fold(
-                      errors2 => (errors1 ++ errors2).invalid[Either[A, B]],
-                      b => b.asRight[A].valid
-                    )
-                  },
-              a => Kleisli(_ => a.asLeft[B].validNec[ConfiguredError].pure[F])
-            )
-          }
-    }
+    Configured.eitherOf(ca, cb)
 }
 
 trait ToConfiguredABSyntaxOps {
@@ -264,38 +252,8 @@ trait ToConfiguredABSyntaxOps {
 
 ////
 
-final class ConfiguredEitherABSyntaxOps[F[_] : Monad, A, B](ce: Configured[F, Either[A, B]]) {
-  def or[C](cc: Configured[F, C]): Configured[F, Either[Either[A, B], C]] =
-  // TODO very similar code
-    new Configured[F, Either[Either[A, B], C]] {
-      override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Either[Either[A, B], C]]] =
-        ce.value(s"${name}_C1")
-          .flatMap {
-            _.fold(
-              errors1 =>
-                cc.value(s"${name}_C2")
-                  .map {
-                    _.fold(
-                      errors2 => (errors1 ++ errors2).invalid[Either[Either[A, B], C]],
-                      b => b.asRight[Either[A, B]].valid
-                    )
-                  },
-              a => Kleisli(_ => a.asLeft[C].validNec[ConfiguredError].pure[F])
-            )
-          }
-    }
-}
-
-trait ToConfiguredEitherABSyntaxOps {
-  implicit def `Ops for ConfiguredSyntax`[F[_] : Monad, A, B](ce: Configured[F, Either[A, B]]): ConfiguredEitherABSyntaxOps[F, A, B] =
-    new ConfiguredEitherABSyntaxOps(ce)
-}
-
-////
-
 trait ConfiguredSyntax
   extends ToConfiguredABSyntaxOps
-    with ToConfiguredEitherABSyntaxOps
 
 object configuredsyntaxinstances
   extends ConfiguredSyntax
