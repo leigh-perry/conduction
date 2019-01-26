@@ -102,6 +102,8 @@ trait Configured[F[_], A] {
 
   def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, A]]
 
+  ////
+
   def withSuffix(suffix: String): Configured[F, A] =
     new Configured[F, A] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, A]] =
@@ -114,6 +116,27 @@ trait Configured[F[_], A] {
         self.value(name)
           .mapF(_.map(_.andThen(f)))
     }
+
+  def or[B](cb: Configured[F, B])(implicit evF: Monad[F]): Configured[F, Either[A, B]] =
+    new Configured[F, Either[A, B]] {
+      override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Either[A, B]]] =
+        self.value(s"${name}_C1")
+          .flatMap {
+            _.fold(
+              errors1 =>
+                cb.value(s"${name}_C2")
+                  .map {
+                    _.fold(
+                      errors2 => (errors1 ++ errors2).invalid[Either[A, B]],
+                      b => b.asRight[A].valid
+                    )
+                  },
+              a => Kleisli(_ => a.asLeft[B].validNec[ConfiguredError].pure[F])
+            )
+          }
+    }
+
+
 }
 
 object Configured {
@@ -182,28 +205,7 @@ object Configured {
     A: Configured[F, A],
     B: Configured[F, B]
   ): Configured[F, Either[A, B]] =
-    eitherOf(A, B)
-  
-  ////
-
-  def eitherOf[F[_] : Monad, A, B](ca: Configured[F, A], cb: Configured[F, B]): Configured[F, Either[A, B]] =
-    new Configured[F, Either[A, B]] {
-      override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Either[A, B]]] =
-        ca.value(s"${name}_C1")
-          .flatMap {
-            _.fold(
-              errors1 =>
-                cb.value(s"${name}_C2")
-                  .map {
-                    _.fold(
-                      errors2 => (errors1 ++ errors2).invalid[Either[A, B]],
-                      b => b.asRight[A].valid
-                    )
-                  },
-              a => Kleisli(_ => a.asLeft[B].validNec[ConfiguredError].pure[F])
-            )
-          }
-    }
+    A.or(B)
 
   ////
 
@@ -237,23 +239,3 @@ object Configured {
   // TODO test laws
 
 }
-
-////
-
-final class ConfiguredABSyntaxOps[F[_] : Monad, A](ca: Configured[F, A]) {
-  def or[B](cb: Configured[F, B]): Configured[F, Either[A, B]] =
-    Configured.eitherOf(ca, cb)
-}
-
-trait ToConfiguredABSyntaxOps {
-  implicit def `Ops for ConfiguredSyntax`[F[_] : Monad, A](ca: Configured[F, A]): ConfiguredABSyntaxOps[F, A] =
-    new ConfiguredABSyntaxOps(ca)
-}
-
-////
-
-trait ConfiguredSyntax
-  extends ToConfiguredABSyntaxOps
-
-object configuredsyntaxinstances
-  extends ConfiguredSyntax

@@ -14,8 +14,7 @@ import minitest.laws.Checkers
 object ConfigSupportTest
   extends SimpleTestSuite
     with Checkers
-    with TestSupport
-    with ConfiguredSyntax {
+    with TestSupport {
 
   import Environment._
 
