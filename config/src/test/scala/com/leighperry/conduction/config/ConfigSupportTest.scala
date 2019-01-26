@@ -7,6 +7,7 @@ import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
 import cats.{Applicative, Id}
+import com.leighperry.conduction.config.X.ConfiguredSyntax
 import com.leighperry.conduction.config.testsupport.TestSupport
 import minitest.SimpleTestSuite
 import minitest.laws.Checkers
@@ -14,7 +15,8 @@ import minitest.laws.Checkers
 object ConfigSupportTest
   extends SimpleTestSuite
     with Checkers
-    with TestSupport {
+    with TestSupport
+    with ConfiguredSyntax {
 
   import Environment._
 
@@ -110,58 +112,65 @@ object ConfigSupportTest
       .assertIs(ConfiguredError.InvalidValue(k, v).invalidNec)
   }
 
+  ////
 
-  val env: Environment =
-  //Environment.withDebug(
-    fromMap(
-      Map(
-        "LP1_HOST" -> "lp1-host",
-        "LP1_PORT" -> "1",
-        "MULTI_EP1_HOST" -> "multi-ep1-host",
-        "MULTI_EP1_PORT" -> "2",
-        "MULTI_EP2_HOST" -> "multi-ep2-host",
-        "MULTI_EP2_PORT" -> "3",
-        "MULTI_EP3_HOST" -> "multi-ep3-host",
-        "MULTI_EP3_PORT" -> "4",
+  val params: Map[String, String] =
+    Map(
+      "LP1_HOST" -> "lp1-host",
+      "LP1_PORT" -> "1",
+      "MULTI_EP1_HOST" -> "multi-ep1-host",
+      "MULTI_EP1_PORT" -> "2",
+      "MULTI_EP2_HOST" -> "multi-ep2-host",
+      "MULTI_EP2_PORT" -> "3",
+      "MULTI_EP3_HOST" -> "multi-ep3-host",
+      "MULTI_EP3_PORT" -> "4",
 
-        "CHOICE_C2_HOST" -> "choice-c2-host",
-        "CHOICE_C2_PORT" -> "6",
+      "CHOICE_C1_HOST" -> "choice-c1-host",
+      "CHOICE_C1_PORT" -> "5",
 
-        "CHOICE_C1_HOST" -> "choice-c1-host",
-        "CHOICE_C1_PORT" -> "5",
-        "CHOICE_C2_C1_HOST" -> "choice-c2-c1-host",
-        "CHOICE_C2_C1_PORT" -> "7",
-        "CHOICE_C2_C2_HOST" -> "choice-c2-c2-host",
-        "CHOICE_C2_C2_PORT" -> "8",
+      "CHOICE2_C1_C1_HOST" -> "choice-c1-c1-host",
+      "CHOICE2_C1_C1_PORT" -> "7",
+      "CHOICE2_C1_C2_HOST" -> "choice-c1-c2-host",
+      "CHOICE2_C1_C2_PORT" -> "8",
+      "CHOICE2_C2_HOST" -> "choice2-c2-host",
+      "CHOICE2_C2_PORT" -> "5",
 
-        "CHOICE_OPT_C2_C1_HOST" -> "choice-opt-c2-c1-host",
-        "CHOICE_OPT_C2_C1_PORT" -> "9",
+      "CHOICE_OPT_C2_C1_HOST" -> "choice-opt-c2-c1-host",
+      "CHOICE_OPT_C2_C1_PORT" -> "9",
 
-        "INTLIST_COUNT" -> "3",
-        "INTLIST_0" -> "1000",
-        "INTLIST_1" -> "1001",
-        "INTLIST_2" -> "1002",
+      "INTLIST_COUNT" -> "3",
+      "INTLIST_0" -> "1000",
+      "INTLIST_1" -> "1001",
+      "INTLIST_2" -> "1002",
 
-        "EPLIST_COUNT" -> "2",
-        "EPLIST_0_HOST" -> "eplist0-host",
-        "EPLIST_0_PORT" -> "2",
-        "EPLIST_1_HOST" -> "eplist1-host",
-        "EPLIST_1_PORT" -> "3",
+      "EPLIST_COUNT" -> "2",
+      "EPLIST_0_HOST" -> "eplist0-host",
+      "EPLIST_0_PORT" -> "2",
+      "EPLIST_1_HOST" -> "eplist1-host",
+      "EPLIST_1_PORT" -> "3",
 
-        "TEPLIST_COUNT" -> "2",
-        "TEPLIST_0_EP1_HOST" -> "teplist0-ep1-host",
-        "TEPLIST_0_EP1_PORT" -> "7",
-        "TEPLIST_0_EP2_HOST" -> "multilist-ep1-host0",
-        "TEPLIST_0_EP2_PORT" -> "7",
-        "TEPLIST_1_EP1_HOST" -> "teplist1-ep1-host",
-        "TEPLIST_1_EP1_PORT" -> "7",
-        "TEPLIST_1_EP2_HOST" -> "multilist-ep2-host1",
-        "TEPLIST_1_EP2_PORT" -> "7",
+      "TEPLIST_COUNT" -> "2",
+      "TEPLIST_0_EP1_HOST" -> "teplist0-ep1-host",
+      "TEPLIST_0_EP1_PORT" -> "7",
+      "TEPLIST_0_EP2_HOST" -> "multilist-ep1-host0",
+      "TEPLIST_0_EP2_PORT" -> "7",
+      "TEPLIST_1_EP1_HOST" -> "teplist1-ep1-host",
+      "TEPLIST_1_EP1_PORT" -> "7",
+      "TEPLIST_1_EP2_HOST" -> "multilist-ep2-host1",
+      "TEPLIST_1_EP2_PORT" -> "7",
 
-        "SOME_INT" -> "567",
-      )
-      //)
+      "SOME_INT" -> "567",
     )
+
+  private def env: Environment = Environment.logging(Environment.fromMap(params) /*, println*/)
+
+  //  private def updatedEnv(mods: (String, String)*): Environment =
+  //    Environment.logging(Environment.fromMap(mods.foldLeft(params)((m, t) => m.updated(t._1, t._2))))
+
+  private def reducedEnv(keys: String*): Environment =
+    Environment.logging(Environment.fromMap(params.filterNot(t => keys.contains(t._1))))
+
+  ////
 
   test("Present valid Configured[Id, Endpoint]") {
     Configured[Id, Endpoint]("LP1")
@@ -193,16 +202,54 @@ object ConfigSupportTest
       .assertIs(Endpoint("choice-c1-host", 5).asLeft.valid)
   }
 
+  test("Present valid Configured[Id, Either[Endpoint, Endpoint]] via `or` syntax") {
+    Configured[Id, Endpoint]
+      .or(Configured[Id, Endpoint])
+      .value("CHOICE")
+      .run(env)
+      .assertIs(Endpoint("choice-c1-host", 5).asLeft.valid)
+  }
+
   test("Missing Configured[Id, Either[Endpoint, Endpoint]]") {
     Configured[Id, Either[Endpoint, Endpoint]]("CHOICE")
       .run(env)
       .assertIs(Endpoint("choice-c1-host", 5).asLeft.valid)
   }
 
-  test("Present valid Configured[Id, Either[Endpoint, Either[Endpoint, Endpoint]]]") {
-    Configured[Id, Either[Endpoint, Either[Endpoint, Endpoint]]]("CHOICE")
+  test("Present valid Configured[Id, Either[Either[Endpoint, Endpoint]], Endpoint]") {
+    Configured[Id, Either[Either[Endpoint, Endpoint], Endpoint]]("CHOICE2")
       .run(env)
-      .assertIs(Endpoint("choice-c1-host", 5).asLeft.validNec)
+      .assertIs(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
+  }
+
+  //      "CHOICE2_C1_C1_HOST" -> "choice-c1-c1-host",
+  //      "CHOICE2_C1_C1_PORT" -> "7",
+  //      "CHOICE2_C1_C2_HOST" -> "choice-c1-c2-host",
+  //      "CHOICE2_C1_C2_PORT" -> "8",
+  //      "CHOICE2_C2_HOST" -> "choice-c1-host",
+  //      "CHOICE2_C2_PORT" -> "5",
+  test("Present valid Configured[Id, Either[Either[Endpoint, Endpoint]], Endpoint] left/left via `or` syntax") {
+    Configured[Id, Either[Endpoint, Endpoint]]
+      .or(Configured[Id, Endpoint])
+      .value("CHOICE2")
+      .run(env)
+      .assertIs(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
+  }
+
+  test("Present valid Configured[Id, Either[Either[Endpoint, Endpoint]], Endpoint] left/right via `or` syntax") {
+    Configured[Id, Either[Endpoint, Endpoint]]
+      .or(Configured[Id, Endpoint])
+      .value("CHOICE2")
+      .run(reducedEnv("CHOICE2_C1_C1_HOST", "CHOICE2_C1_C1_PORT"))
+      .assertIs(Endpoint("choice-c1-c2-host", 8).asRight.asLeft.validNec)
+  }
+
+  test("Present valid Configured[Id, Either[Either[Endpoint, Endpoint]], Endpoint] right via `or` syntax") {
+    Configured[Id, Either[Endpoint, Endpoint]]
+      .or(Configured[Id, Endpoint])
+      .value("CHOICE2")
+      .run(reducedEnv("CHOICE2_C1_C1_HOST", "CHOICE2_C1_C1_PORT", "CHOICE2_C1_C2_HOST", "CHOICE2_C1_C2_PORT"))
+      .assertIs(Endpoint("choice2-c2-host", 5).asRight.validNec)
   }
 
   test("Missing Configured[Id, Either[Endpoint, Either[Endpoint, Endpoint]]]") {
