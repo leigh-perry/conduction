@@ -117,7 +117,7 @@ trait Configured[F[_], A] {
           .mapF(_.map(_.andThen(f)))
     }
 
-  def or[B](cb: Configured[F, B])(implicit evF: Monad[F]): Configured[F, Either[A, B]] =
+  def or[B](cb: Configured[F, B])(implicit F: Monad[F]): Configured[F, Either[A, B]] =
     new Configured[F, Either[A, B]] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, Either[A, B]]] =
         self.value(s"${name}_C1")
@@ -135,7 +135,6 @@ trait Configured[F[_], A] {
             )
           }
     }
-
 
 }
 
@@ -205,7 +204,7 @@ object Configured {
     A: Configured[F, A],
     B: Configured[F, B]
   ): Configured[F, Either[A, B]] =
-    A.or(B)
+    A or B
 
   ////
 
