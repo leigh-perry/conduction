@@ -15,8 +15,7 @@ import cats.{Applicative, Functor, Monad, Show}
   * Support for reading detailed, nested configuration from environment variables etc
   */
 
-////
-
+// Low level conversion from String
 trait Conversion[A] {
   def of(s: String): Either[String, A]
 }
@@ -75,6 +74,7 @@ object Environment {
 
       import scala.collection.JavaConverters._
 
+      // TODO wrap in F / IO
       val envvars: Map[String, String] = System.getenv.asScala.toMap
 
       override def get(key: String): Option[String] =

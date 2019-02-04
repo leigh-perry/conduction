@@ -25,7 +25,7 @@ lazy val config =
         minitestLaws % "test",
         scalacheck % "test",
         catsLaws % "test",
-        "com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.8" % Test
+        //"com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.8" % Test
       )
     )
 
