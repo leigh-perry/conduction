@@ -32,6 +32,9 @@ object Conversion {
   implicit val conversionDouble: Conversion[Double] =
     (s: String) => eval(s, _.toDouble)
 
+  implicit val conversionBoolean: Conversion[Boolean] =
+    (s: String) => eval(s, _.toBoolean)
+
   implicit val conversionString: Conversion[String] =
     (s: String) => s.asRight
 
@@ -234,7 +237,5 @@ object Configured {
             }
         }
     }
-
-  // TODO test laws
 
 }
