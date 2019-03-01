@@ -1,6 +1,6 @@
 # Conduction - application configuration through induction
 
-   * [Conduction - application configuration through induction](#conduction---application-configuration-through-induction)
+   * [Contents](#conduction---application-configuration-through-induction)
       * [Naming](#naming)
       * [Supported types](#supported-types)
          * [Primitives](#primitives)
