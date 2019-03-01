@@ -1,5 +1,18 @@
 # Conduction - application configuration through induction
 
+   * [Conduction - application configuration through induction](#conduction---application-configuration-through-induction)
+      * [Naming](#naming)
+      * [Supported types](#supported-types)
+         * [Primitives](#primitives)
+         * [List](#list)
+         * [Option](#option)
+         * [Either](#either)
+      * [Supporting new primitive types](#supporting-new-primitive-types)
+         * [Supporting newtypes](#supporting-newtypes)
+      * [Supporting other effects](#supporting-other-effects)
+      * [Environment options](#environment-options)
+      * [Error reporting](#error-reporting)
+
 Configuration is via a configuration library that inductively derives the configuration for known
 types. It is able to decode nested classes of arbitrary complexity from key-value pairs, typically
 environment variables or system properties.
