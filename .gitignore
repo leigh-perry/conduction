@@ -1,3 +1,5 @@
+.bloop
+.metals
 .terraform
 *.pem
 app.*.log.gz
