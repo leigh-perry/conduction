@@ -1,6 +1,7 @@
 package com.leighperry.conduction.config
 
 import cats.data.{Kleisli, ValidatedNec}
+import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.applicative._
 import cats.syntax.apply._
@@ -72,30 +73,40 @@ trait Environment {
 }
 
 object Environment {
-  def fromEnvVars: Environment =
-    new Environment {
 
-      import scala.collection.JavaConverters._
+  import scala.collection.JavaConverters._
 
-      // TODO wrap in F / IO
-      val envvars: Map[String, String] = System.getenv.asScala.toMap
+  def fromEnvVars[F[_] : Sync]: F[Environment] =
+    Sync[F].delay(System.getenv.asScala.toMap)
+      .map(
+        envvars =>
+          new Environment {
+            override def get(key: String): Option[String] =
+              envvars.get(key)
+          }
+      )
 
-      override def get(key: String): Option[String] =
-        envvars.get(key)
-    }
-
-  def fromMap(map: Map[String, String]): Environment =
-    (key: String) => map.get(key)
+  def fromMap[F[_] : Sync](map: Map[String, String]): F[Environment] =
+    Sync[F].delay(
+      new Environment {
+        override def get(key: String): Option[String] =
+          map.get(key)
+      }
+    )
 
   val printer: String => Unit = (s: String) => println(s"         $s")
   val silencer: String => Unit = (_: String) => ()
 
-  def logging(inner: Environment, log: String => Unit = silencer): Environment =
-    (key: String) => {
-      val value = inner.get(key)
-      value.fold(log(s"Not configured: $key"))(v => log(s"export $key=$v"))
-      value
-    }
+  def logging[F[_] : Sync](inner: Environment, log: String => Unit = silencer): F[Environment] =
+    Sync[F].delay(
+      new Environment {
+        override def get(key: String): Option[String] = {
+          val value = inner.get(key)
+          value.fold(log(s"Not configured: $key"))(v => log(s"export $key=$v"))
+          value
+        }
+      }
+    )
 }
 
 ////
