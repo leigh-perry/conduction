@@ -45,10 +45,9 @@ object Conversion {
         (s: String) => fa.of(s).map(f)
     }
 
-  private def eval[A](s: String, f: String => A): Either[String, A] = {
+  private def eval[A](s: String, f: String => A): Either[String, A] =
     Either.catchNonFatal(f(s))
       .leftMap(_ => s)
-  }
 }
 
 ////
