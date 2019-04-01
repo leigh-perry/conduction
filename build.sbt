@@ -2,7 +2,7 @@ import Dependencies._
 import sbt.Project
 
 inThisBuild(List(
-  organization := "com.leighperry",
+  organization := "com.github.leigh-perry",
   homepage := Some(url("https://github.com/leigh-perry/conduction")),
   licenses := List("MIT" -> url("https://opensource.org/licenses/MIT")),
   developers := List(
