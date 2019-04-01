@@ -1,13 +1,27 @@
 import Dependencies._
 import sbt.Project
 
+inThisBuild(List(
+  organization := "com.leighperry",
+  homepage := Some(url("https://github.com/leigh-perry/conduction")),
+  licenses := List("MIT" -> url("https://opensource.org/licenses/MIT")),
+  developers := List(
+    Developer(
+      "lperry",
+      "Leigh Perry",
+      "lperry.breakpoint@gmail.com",
+      url("https://github.com/leigh-perry")
+    )
+  )
+))
+
 val projectName = "conduction"
 
 lazy val commonSettings =
   ProjectDefaults.settings ++
     Seq(
       name := projectName,
-      organization := "com.leighperry",
+      //organization := "com.leighperry",
       scalaVersion := "2.12.8"
     )
 
@@ -20,7 +34,7 @@ lazy val config =
       Seq(
         cats,
         catsEffect,
-        log4catsSlf4j,
+        log4catsSlf4j % "test",
         minitest % "test",
         minitestLaws % "test",
         scalacheck % "test",

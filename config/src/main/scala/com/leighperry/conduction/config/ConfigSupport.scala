@@ -45,10 +45,9 @@ object Conversion {
         (s: String) => fa.of(s).map(f)
     }
 
-  private def eval[A](s: String, f: String => A): Either[String, A] = {
+  private def eval[A](s: String, f: String => A): Either[String, A] =
     Either.catchNonFatal(f(s))
       .leftMap(_ => s)
-  }
 }
 
 ////
@@ -124,6 +123,10 @@ trait Configured[F[_], A] {
         self.value(name = s"${name}_$suffix")
     }
 
+  /**
+    * Support sequential use of `Configured` (monadic-style), which is otherwise applicative.
+    * Not called `flatMap` to eschew the use in for-comprehensions.
+    */
   def andThen[B](f: A => ValidatedNec[ConfiguredError, B])(implicit F: Functor[F]): Configured[F, B] =
     new Configured[F, B] {
       override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, B]] =
@@ -235,10 +238,8 @@ object Configured {
           override def value(name: String): Kleisli[F, Environment, ValidatedNec[ConfiguredError, B]] =
             Kleisli {
               env =>
-                (
-                  ca.value(name).run(env),
-                  ff.value(name).run(env)
-                ).tupled
+                (ca.value(name).run(env), ff.value(name).run(env))
+                  .tupled
                   .map {
                     _.mapN {
                       (a, a2b) =>
