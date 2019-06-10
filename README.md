@@ -13,6 +13,11 @@
       * [Environment options](#environment-options)
       * [Error reporting](#error-reporting)
 
+```scala
+// available for Scala 2.12, 2.13
+libraryDependencies += "com.github.leigh-perry" %% "conduction" % "0.1.1"
+```
+
 Configuration is via a configuration library that inductively derives the configuration for known
 types. It is able to decode nested classes of arbitrary complexity from key-value pairs, typically
 environment variables or system properties.
