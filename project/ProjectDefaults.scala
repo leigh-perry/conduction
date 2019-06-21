@@ -58,7 +58,7 @@ object ProjectDefaults {
           "-feature", // Emit warning and location for usages of features that should be imported explicitly.
           "-target:jvm-1.8",
           "-language:_",
-          "-Ybackend-parallelism", java.lang.Runtime.getRuntime.availableProcessors.toString
+          "-Ybackend-parallelism", java.lang.Runtime.getRuntime.availableProcessors.toString,
         ) ++ scalacOptionsWarnings,
 
       fork in Test := true,
@@ -72,7 +72,11 @@ object ProjectDefaults {
           "-Xmx1G",
           "-XX:MaxMetaspaceSize=512M",
           "-XX:+HeapDumpOnOutOfMemoryError",
-          "-XX:HeapDumpPath=./heap-dump.hprof"
+          "-XX:HeapDumpPath=./heap-dump.hprof",
+          "-XX:-IgnoreUnrecognizedVMOptions",
+          "-XX:+UnlockExperimentalVMOptions",
+          "-XX:+EnableJVMCI",
+          "-XX:+UseJVMCICompiler",
         ),
 
       // Disable warnings in console
