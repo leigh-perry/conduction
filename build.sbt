@@ -22,7 +22,7 @@ lazy val commonSettings =
     Seq(
       name := projectName,
       //organization := "com.leighperry",
-      scalaVersion := "2.12.8"
+      scalaVersion := "2.12.9"
     )
 
 val tests = "compile->compile;test->test"
@@ -60,6 +60,6 @@ def module(id: String, settings: Seq[Def.Setting[_]] = commonSettings, deps: Seq
     .settings(settings)
     .settings(
       name := s"$projectName-$id",
-      libraryDependencies ++= deps ++ Seq("org.scala-lang" % "scala-reflect" % "2.12.8")
+      libraryDependencies ++= deps ++ Seq("org.scala-lang" % "scala-reflect" % "2.12.9")
     )
 }
