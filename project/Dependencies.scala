@@ -8,7 +8,7 @@ object Dependencies {
 
     val log4cats = "0.3.0"
 
-    val minitest = "2.6.0"
+    val minitest = "2.7.0"
     val scalacheck = "1.14.0"
   }
 
