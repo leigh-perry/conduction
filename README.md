@@ -15,7 +15,7 @@
 
 ```scala
 // available for Scala 2.12, 2.13
-libraryDependencies += "com.github.leigh-perry" %% "conduction" % "0.1.1"
+libraryDependencies += "com.github.leigh-perry" %% "conduction" % "0.2.0"
 ```
 
 Configuration is via a configuration library that inductively derives the configuration for known
@@ -303,3 +303,9 @@ Composition of `Configured` instances is done using applicative combination, eg
 ```
 
 This means that if configuration errors are present, all errors are reported, rather than bailing at the first error discovered.
+
+# Release
+
+VERS=0.2.0
+git tag -a v${VERS} -m "v${VERS}"
+git push origin v${VERS}
