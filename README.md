@@ -15,7 +15,7 @@
 
 ```scala
 // available for Scala 2.12, 2.13
-libraryDependencies += "com.github.leigh-perry" %% "conduction" % "0.2.0"
+libraryDependencies += "com.github.leigh-perry" %% "conduction" % "0.2.1"
 ```
 
 Configuration is via a configuration library that inductively derives the configuration for known
