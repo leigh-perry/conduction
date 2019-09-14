@@ -46,7 +46,7 @@ object ProjectDefaults {
 
   val settings =
     Seq(
-      scalaVersion := "2.13.0",
+      scalaVersion := Dependencies.Version.scala,
 
       scalacOptions ++=
         Seq(

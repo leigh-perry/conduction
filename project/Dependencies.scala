@@ -1,7 +1,8 @@
 import sbt._
 
 object Dependencies {
-  private object Version {
+  object Version {
+    val scala = "2.13.0"
 
     val cats = "2.0.0"
     val catsEffect = "2.0.0"
