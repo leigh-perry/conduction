@@ -306,6 +306,6 @@ This means that if configuration errors are present, all errors are reported, ra
 
 # Release
 
-VERS=0.2.0
+VERS=0.3.0
 git tag -a v${VERS} -m "v${VERS}"
 git push origin v${VERS}

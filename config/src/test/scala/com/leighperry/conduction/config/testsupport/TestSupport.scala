@@ -5,8 +5,6 @@ import cats.syntax.eq._
 import minitest.api.Asserts
 import org.scalacheck.Gen
 
-import scala.language.implicitConversions
-
 final class TestSupportOps[A](val actual: A) extends Asserts {
   def shouldBe(expected: A): Boolean = {
     val result = expected == actual
