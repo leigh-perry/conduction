@@ -10,7 +10,7 @@ object Dependencies {
     val log4cats = "1.0.0"
 
     val minitest = "2.7.0"
-    val scalacheck = "1.14.0"
+    val scalacheck = "1.14.1"
   }
 
   val cats = "org.typelevel" %% "cats-core" % Version.cats
