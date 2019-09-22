@@ -1,6 +1,6 @@
 import Dependencies._
 
-val Scala_213 = "2.13.0"
+val Scala_213 = "2.13.1"
 val Scala_212 = "2.12.10"
 //val Scala_211 = "2.11.12"
 
@@ -59,8 +59,6 @@ lazy val core =
     )
 
 lazy val allModules = List(core)
-
-lazy val lastStableVersion = settingKey[String]("Last tagged version")
 
 lazy val conduction =
   project
