@@ -11,7 +11,7 @@ val projectName = "Conduction"
 inThisBuild(
   List(
     organization := "com.github.leigh-perry",
-    homepage := Some(url("https://github.com/leigh-perry/${projectName.toLowerCase}")),
+    homepage := Some(url(s"https://github.com/leigh-perry/${projectName.toLowerCase}")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers :=
       List(
