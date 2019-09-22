@@ -33,6 +33,7 @@ lazy val commonSettings =
     scalaVersion := Scala_213,
     scalacOptions ++= commonScalacOptions(scalaVersion.value),
     fork in Test := true,
+    testFrameworks += new TestFramework("minitest.runner.Framework"),
     name := "conduction",
     updateOptions := updateOptions.value.withGigahorse(false),
     libraryDependencies ++=
