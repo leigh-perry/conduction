@@ -145,7 +145,7 @@ object ConfigSupportTest
       } yield c
 
     io.unsafeRunSync()
-      .assertIs(ConfiguredError.MissingValue("MISSINGx").invalidNec)
+      .assertIs(ConfiguredError.MissingValue("MISSING").invalidNec)
   }
 
   test("Invalid valid Double") {
