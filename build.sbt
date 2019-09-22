@@ -6,10 +6,12 @@ val Scala_212 = "2.12.10"
 
 ////
 
+val projectName = "Conduction"
+
 inThisBuild(
   List(
     organization := "com.github.leigh-perry",
-    homepage := Some(url("https://github.com/leigh-perry/conduction")),
+    homepage := Some(url("https://github.com/leigh-perry/${projectName.toLowerCase}")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
     developers :=
       List(
@@ -34,7 +36,7 @@ lazy val commonSettings =
     scalacOptions ++= commonScalacOptions(scalaVersion.value),
     fork in Test := true,
     testFrameworks += new TestFramework("minitest.runner.Framework"),
-    name := "conduction",
+    name := projectName,
     updateOptions := updateOptions.value.withGigahorse(false),
     libraryDependencies ++=
       Seq(
@@ -60,7 +62,7 @@ lazy val core =
 
 lazy val allModules = List(core)
 
-lazy val conduction =
+lazy val root =
   project
     .in(file("."))
     .settings(commonSettings)
