@@ -422,7 +422,7 @@ object ConfigSupportTest
   final case class Endpoint(host: String, port: Int)
 
   object Endpoint {
-    implicit def `Configured for Endpoint`[F[_]](implicit F: Applicative[F]): Configured[F, Endpoint] = (
+    implicit def configuredInstance[F[_]](implicit F: Applicative[F]): Configured[F, Endpoint] = (
       Configured[F, String].withSuffix("HOST"),
       Configured[F, Int].withSuffix("PORT")
     ).mapN(Endpoint.apply)
@@ -431,7 +431,7 @@ object ConfigSupportTest
   final case class TwoEndpoints(ep1: Endpoint, ep2: Endpoint)
 
   object TwoEndpoints {
-    implicit def `Configured for TwoEndpoints`[F[_]](implicit F: Applicative[F]): Configured[F, TwoEndpoints] = (
+    implicit def configuredInstance[F[_]](implicit F: Applicative[F]): Configured[F, TwoEndpoints] = (
       Configured[F, Endpoint].withSuffix("EP1"),
       Configured[F, Endpoint].withSuffix("EP2")
     ).mapN(TwoEndpoints.apply)
@@ -440,7 +440,7 @@ object ConfigSupportTest
   final case class ThreeEndpoints(ep1: Endpoint, ep2: Endpoint, ep3: Endpoint)
 
   object ThreeEndpoints {
-    implicit def `Configured for ThreeEndpoints`[F[_]](implicit F: Applicative[F]): Configured[F, ThreeEndpoints] = (
+    implicit def configuredInstance[F[_]](implicit F: Applicative[F]): Configured[F, ThreeEndpoints] = (
       Configured[F, Endpoint].withSuffix("EP1"),
       Configured[F, Endpoint].withSuffix("EP2"),
       Configured[F, Endpoint].withSuffix("EP3"),

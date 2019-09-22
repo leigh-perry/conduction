@@ -9,11 +9,9 @@ stages:
 
 jobs:
   include:
-    # stage="test" if no stage is specified
-    - env: TEST="compile"
-      script: sbt compile
-    # - env: TEST="formatting"
-    #   script: ./bin/scalafmt --test
+    - stage: test
+      script: sbt +compile +test:compile +test
+
     # run ci-release only if previous stages passed
     - stage: release
       script: sbt ci-release

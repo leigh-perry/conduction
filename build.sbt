@@ -1,65 +1,101 @@
 import Dependencies._
-import sbt.Project
 
-inThisBuild(List(
-  organization := "com.github.leigh-perry",
-  homepage := Some(url("https://github.com/leigh-perry/conduction")),
-  licenses := List("MIT" -> url("https://opensource.org/licenses/MIT")),
-  developers := List(
-    Developer(
-      "lperry",
-      "Leigh Perry",
-      "lperry.breakpoint@gmail.com",
-      url("https://github.com/leigh-perry")
-    )
+val Scala_213 = "2.13.0"
+val Scala_212 = "2.12.10"
+//val Scala_211 = "2.11.12"
+
+////
+
+inThisBuild(
+  List(
+    organization := "com.github.leigh-perry",
+    homepage := Some(url("https://github.com/leigh-perry/conduction")),
+    licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers :=
+      List(
+        Developer(
+          "leigh-perry",
+          "Leigh Perry",
+          "lperry.breakpoint@gmail.com",
+          url("https://leigh-perry.github.io")
+        )
+      )
   )
-))
+)
 
-val projectName = "conduction"
+lazy val compilerPlugins =
+  List(
+    compilerPlugin("org.typelevel" %% "kind-projector" % Version.kindProjectorVersion)
+  )
 
 lazy val commonSettings =
-  ProjectDefaults.settings ++
-    Seq(
-      name := projectName,
-      //organization := "com.leighperry",
-      scalaVersion := Dependencies.Version.scala
-    )
-
-val tests = "compile->compile;test->test"
-
-lazy val config =
-  module(
-    id = "config",
-    deps =
+  Seq(
+    scalaVersion := Scala_213,
+    scalacOptions ++= commonScalacOptions(scalaVersion.value),
+    fork in Test := true,
+    name := "conduction",
+    updateOptions := updateOptions.value.withGigahorse(false),
+    libraryDependencies ++=
       Seq(
-        cats,
-        catsEffect,
         log4catsSlf4j % "test",
         minitest % "test",
         minitestLaws % "test",
         scalacheck % "test",
-        catsLaws % "test",
-        //"com.github.alexarchambault" %% "scalacheck-shapeless_1.13" % "1.1.8" % Test
-      )
+        catsLaws % "test"
+      ) ++ compilerPlugins
+  )
+
+lazy val crossBuiltCommonSettings = commonSettings ++ Seq(crossScalaVersions := Seq(Scala_212, Scala_213))
+
+lazy val core =
+  module("core")
+    .settings(
+      libraryDependencies ++=
+        Seq(
+          cats,
+          catsEffect
+        )
     )
 
-lazy val root =
-  (project in file("."))
-    .aggregate(config)
-    .dependsOn(config)
+lazy val allModules = List(core)
+
+lazy val lastStableVersion = settingKey[String]("Last tagged version")
+
+lazy val conduction =
+  project
+    .in(file("."))
     .settings(commonSettings)
-    .settings(
-      aggregate in update := false,
-      updateOptions := updateOptions.value.withCachedResolution(true),
-      mainClass in Compile := (mainClass in `config` in Compile).value,
-      fullClasspath in Runtime ++= (fullClasspath in `config` in Runtime).value
-    )
+    .settings(skip in publish := true, crossScalaVersions := List())
+    .aggregate((allModules).map(x => x: ProjectReference): _*)
 
-def module(id: String, settings: Seq[Def.Setting[_]] = commonSettings, deps: Seq[ModuleID] = Vector()): Project = {
-  Project(id = id, base = file(id))
-    .settings(settings)
-    .settings(
-      name := s"$projectName-$id",
-      libraryDependencies ++= deps ++ Seq("org.scala-lang" % "scala-reflect" % Dependencies.Version.scala)
-    )
-}
+////
+
+def module(moduleName: String): Project =
+  Project(moduleName, file("modules/" + moduleName))
+    .settings(crossBuiltCommonSettings)
+    .settings(name += s"-$moduleName")
+
+def versionDependentExtraScalacOptions(scalaVersion: String) =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, minor)) if minor < 13 => Seq("-Yno-adapted-args", "-Xfuture", "-Ypartial-unification")
+    case _ => Nil
+  }
+
+def commonScalacOptions(scalaVersion: String) =
+  Seq(
+    "-encoding",
+    "UTF-8",
+    "-feature",
+    "-language:existentials",
+    "-language:higherKinds",
+    "-language:implicitConversions",
+    "-language:experimental.macros",
+    "-unchecked",
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+    "-Ywarn-value-discard",
+    //"-Xfatal-warnings",
+    "-deprecation",
+    "-Xlint:-unused,_"
+  ) ++
+    versionDependentExtraScalacOptions(scalaVersion)

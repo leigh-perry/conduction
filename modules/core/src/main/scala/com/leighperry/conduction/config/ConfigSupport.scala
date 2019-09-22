@@ -73,7 +73,10 @@ trait Environment {
 
 object Environment {
 
-  import scala.jdk.CollectionConverters._
+  // Not in 2.11
+  //  import scala.jdk.CollectionConverters._
+
+  import scala.collection.JavaConverters._
 
   def fromEnvVars[F[_] : Sync]: F[Environment] =
     Sync[F].delay(System.getenv.asScala.toMap)
