@@ -25,24 +25,42 @@ object Conversion {
   def apply[A](implicit F: Conversion[A]): Conversion[A] = F
 
   implicit val conversionInt: Conversion[Int] =
-    (s: String) => eval(s, _.toInt)
+    new Conversion[Int] {
+      override def of(s: String): Either[String, Int] =
+        eval(s, _.toInt)
+    }
 
   implicit val conversionLong: Conversion[Long] =
-    (s: String) => eval(s, _.toLong)
+    new Conversion[Long] {
+      override def of(s: String): Either[String, Long] =
+        eval(s, _.toLong)
+    }
 
   implicit val conversionDouble: Conversion[Double] =
-    (s: String) => eval(s, _.toDouble)
+    new Conversion[Double] {
+      override def of(s: String): Either[String, Double] =
+        eval(s, _.toDouble)
+    }
 
   implicit val conversionBoolean: Conversion[Boolean] =
-    (s: String) => eval(s, _.toBoolean)
+    new Conversion[Boolean] {
+      override def of(s: String): Either[String, Boolean] =
+        eval(s, _.toBoolean)
+    }
 
   implicit val conversionString: Conversion[String] =
-    (s: String) => s.asRight
+    new Conversion[String] {
+      override def of(s: String): Either[String, String] =
+        s.asRight
+    }
 
   implicit val functorConversion: Functor[Conversion] =
     new Functor[Conversion] {
       override def map[A, B](fa: Conversion[A])(f: A => B): Conversion[B] =
-        (s: String) => fa.of(s).map(f)
+        new Conversion[B] {
+          override def of(s: String): Either[String, B] =
+            fa.of(s).map(f)
+        }
     }
 
   private def eval[A](s: String, f: String => A): Either[String, A] =

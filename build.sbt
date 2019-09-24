@@ -2,7 +2,7 @@ import Dependencies._
 
 val Scala_213 = "2.13.1"
 val Scala_212 = "2.12.10"
-//val Scala_211 = "2.11.12"
+val Scala_211 = "2.11.12"
 
 ////
 
@@ -40,7 +40,6 @@ lazy val commonSettings =
     updateOptions := updateOptions.value.withGigahorse(false),
     libraryDependencies ++=
       Seq(
-        log4catsSlf4j % "test",
         minitest % "test",
         minitestLaws % "test",
         scalacheck % "test",
@@ -48,7 +47,7 @@ lazy val commonSettings =
       ) ++ compilerPlugins
   )
 
-lazy val crossBuiltCommonSettings = commonSettings ++ Seq(crossScalaVersions := Seq(Scala_212, Scala_213))
+lazy val crossBuiltCommonSettings = commonSettings ++ Seq(crossScalaVersions := Seq(Scala_211, Scala_212, Scala_213))
 
 lazy val core =
   module("core")
