@@ -208,7 +208,7 @@ object ConfigSupportTest
       "TEPLIST_1_EP2_HOST" -> "multilist-ep2-host1",
       "TEPLIST_1_EP2_PORT" -> "7",
 
-      "SOME_INT" -> "567",
+      "SOME_INT" -> "567"
     )
 
   private def envIO: IO[Environment] =
@@ -443,7 +443,7 @@ object ConfigSupportTest
     implicit def configuredInstance[F[_]](implicit F: Applicative[F]): Configured[F, ThreeEndpoints] = (
       Configured[F, Endpoint].withSuffix("EP1"),
       Configured[F, Endpoint].withSuffix("EP2"),
-      Configured[F, Endpoint].withSuffix("EP3"),
+      Configured[F, Endpoint].withSuffix("EP3")
     ).mapN(ThreeEndpoints.apply)
   }
 
