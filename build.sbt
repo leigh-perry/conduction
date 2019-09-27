@@ -6,7 +6,7 @@ val Scala_211 = "2.11.12"
 
 ////
 
-val projectName = "Conduction"
+val projectName = "conduction"
 
 inThisBuild(
   List(
@@ -67,6 +67,9 @@ lazy val root =
     .settings(commonSettings)
     .settings(skip in publish := true, crossScalaVersions := List())
     .aggregate((allModules).map(x => x: ProjectReference): _*)
+
+addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
+addCommandAlias("fmtcheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtCheck")
 
 ////
 

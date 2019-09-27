@@ -1,9 +1,12 @@
 package com.leighperry.conduction.config.testsupport
 
 import cats.Eq
+import cats.effect.IO
 import cats.syntax.eq._
 import minitest.api.Asserts
-import org.scalacheck.Gen
+import org.scalacheck.Prop.forAll
+import org.scalacheck.util.Pretty
+import org.scalacheck.{ Gen, Prop, Shrink }
 
 final class TestSupportOps[A](val actual: A) extends Asserts {
   def shouldBe(expected: A): Boolean = {
@@ -28,9 +31,8 @@ final class TestSupportOps[A](val actual: A) extends Asserts {
     assertEquals(actual, expected)
   }
 
-  def assertSatisfies(f: A => Boolean): Unit = {
+  def assertSatisfies(f: A => Boolean): Unit =
     assert(shouldSatisfy(f))
-  }
 }
 
 trait ToTestSupportOps {
@@ -63,7 +65,6 @@ trait ToTestSupportEqOps {
 
 ////
 
-
 trait TestSupportGens {
   def genBoolean: Gen[Boolean] =
     Gen.posNum[Int].map(_ % 2 == 0)
@@ -83,10 +84,23 @@ trait TestSupportGens {
 
 ////
 
-trait TestSupport
-  extends ToTestSupportOps
-    with ToTestSupportEqOps
-    with TestSupportGens
+trait TestSupportIO {
 
-object testsupportinstances
-  extends TestSupport
+  // ScalaCheck forAll except for IO
+  def forAllIO[T1, P](g1: Gen[T1])(f: T1 => IO[P])(
+    implicit p: P => Prop,
+    s1: Shrink[T1],
+    pp1: T1 => Pretty
+  ): Prop =
+    forAll(g1) {
+      t1 =>
+        f(t1).unsafeRunSync()
+    }
+
+}
+
+////
+
+trait TestSupport extends ToTestSupportOps with ToTestSupportEqOps with TestSupportGens with TestSupportIO
+
+object testsupportinstances extends TestSupport
