@@ -3,12 +3,11 @@ package com.leighperry.conduction.config.testsupport
 import cats.Eq
 import cats.effect.IO
 import cats.syntax.eq._
-import minitest.api.Asserts
 import org.scalacheck.Prop.forAll
 import org.scalacheck.util.Pretty
-import org.scalacheck.{Arbitrary, Gen, Prop, Shrink}
+import org.scalacheck.{ Arbitrary, Gen, Prop, Shrink }
 
-final class TestSupportOps[A](val actual: A) extends Asserts {
+final class TestSupportOps[A](val actual: A) {
   def shouldBe(expected: A): Boolean = {
     val result = expected == actual
     if (!result) {
@@ -26,13 +25,6 @@ final class TestSupportOps[A](val actual: A) extends Asserts {
     result
   }
 
-  def assertIs(expected: A): Unit = {
-    shouldBe(expected)
-    assertEquals(actual, expected)
-  }
-
-  def assertSatisfies(f: A => Boolean): Unit =
-    assert(shouldSatisfy(f))
 }
 
 trait ToTestSupportOps {
@@ -42,7 +34,7 @@ trait ToTestSupportOps {
 
 ////
 
-final class TestSupportEqOps[A: Eq](val actual: A) extends Asserts {
+final class TestSupportEqOps[A: Eq](val actual: A) {
   def shouldBeEq(expected: A): Boolean = {
     val result = expected === actual
     if (!result) {
@@ -61,6 +53,40 @@ final class TestSupportEqOps[A: Eq](val actual: A) extends Asserts {
 trait ToTestSupportEqOps {
   implicit def `Ops for TestSupport Eq`[A: Eq](actual: A): TestSupportEqOps[A] =
     new TestSupportEqOps[A](actual)
+}
+
+////
+
+final class TestSupportIOOps[E, A](val io: IO[A]) {
+  def shouldBeIO(expected: A): IO[Boolean] =
+    io.flatMap {
+      actual =>
+        val result = expected == actual
+        if (!result) {
+          IO.delay(
+              println(
+                s"""       => FAIL: expected[$expected]
+                   |                  actual[$actual]""".stripMargin
+              )
+            )
+            .map(_ => result)
+        } else IO(result)
+    }
+
+  def shouldSatisfyIO(f: A => Boolean): IO[Boolean] =
+    io.flatMap {
+      actual =>
+        val result = f(actual)
+        if (!result) {
+          IO.delay(println(s"       => FAIL:   doesn't satisfy, actual: [$actual]"))
+            .map(_ => result)
+        } else IO(result)
+    }
+}
+
+trait ToTestSupportIOOps {
+  implicit def `instanceTestSupportIO`[E, A](io: IO[A]): TestSupportIOOps[E, A] =
+    new TestSupportIOOps[E, A](io)
 }
 
 ////
@@ -127,6 +153,7 @@ trait TestSupportScalacheck {
 trait TestSupport
   extends ToTestSupportOps
   with ToTestSupportEqOps
+  with ToTestSupportIOOps
   with TestSupportGens
   with TestSupportScalacheck
 
