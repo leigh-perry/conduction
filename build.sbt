@@ -101,7 +101,7 @@ def commonScalacOptions(scalaVersion: String) =
     "-Ywarn-numeric-widen",
     "-Ywarn-value-discard",
     //"-Xfatal-warnings",
-    "-deprecation",
-    "-Xlint:-unused,_"
+    "-deprecation"
+    //"-Xlint:-unused,_"
   ) ++
     versionDependentExtraScalacOptions(scalaVersion)
