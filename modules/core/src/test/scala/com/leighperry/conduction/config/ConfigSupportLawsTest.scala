@@ -6,12 +6,10 @@ import cats.instances.string._
 import cats.laws.discipline.FunctorTests
 import minitest.SimpleTestSuite
 import minitest.laws.Checkers
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.{ Arbitrary, Gen }
 import org.typelevel.discipline.Laws
 
-object ConfigSupportLawsTest
-  extends SimpleTestSuite
-    with Checkers {
+object ConfigSupportLawsTest extends SimpleTestSuite with Checkers {
 
   final case class TestContext()
 
@@ -26,10 +24,10 @@ object ConfigSupportLawsTest
 
   ////
 
-  implicit def arbitraryConversion[A: Conversion : Arbitrary]: Arbitrary[Conversion[A]] =
+  implicit def arbitraryConversion[A: Conversion: Arbitrary]: Arbitrary[Conversion[A]] =
     Arbitrary(Gen.const(Conversion[A]))
 
-  implicit def eqConversion[T: Arbitrary : Eq]: Eq[Conversion[T]] =
+  implicit def eqConversion[T: Arbitrary: Eq]: Eq[Conversion[T]] =
     new Eq[Conversion[T]] {
       override def eqv(x: Conversion[T], y: Conversion[T]): Boolean =
         Arbitrary.arbitrary[String].sample.fold(false) {

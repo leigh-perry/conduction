@@ -47,7 +47,9 @@ lazy val commonSettings =
       ) ++ compilerPlugins
   )
 
-lazy val crossBuiltCommonSettings = commonSettings ++ Seq(crossScalaVersions := Seq(Scala_211, Scala_212, Scala_213))
+lazy val crossBuiltCommonSettings =
+  commonSettings ++
+    Seq(crossScalaVersions := Seq(Scala_211, Scala_212, Scala_213))
 
 lazy val core =
   module("core")
@@ -80,7 +82,8 @@ def module(moduleName: String): Project =
 
 def versionDependentExtraScalacOptions(scalaVersion: String) =
   CrossVersion.partialVersion(scalaVersion) match {
-    case Some((2, minor)) if minor < 13 => Seq("-Yno-adapted-args", "-Xfuture", "-Ypartial-unification")
+    case Some((2, minor)) if minor < 13 =>
+      Seq("-Yno-adapted-args", "-Xfuture", "-Ypartial-unification")
     case _ => Nil
   }
 

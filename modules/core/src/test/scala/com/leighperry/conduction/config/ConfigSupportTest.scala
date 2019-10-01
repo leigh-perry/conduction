@@ -1,10 +1,11 @@
 package com.leighperry.conduction.config
 
-import cats.Applicative
+import cats.Monad
 import cats.data.Validated
 import cats.effect.IO
-import cats.syntax.apply._
+import cats.syntax.contravariantSemigroupal._
 import cats.syntax.either._
+import cats.syntax.foldable._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
@@ -27,81 +28,84 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     kv =>
       val k = kv.key
       val v = kv.v
-      for {
-        map <- fromMap[IO](Map(k -> v))
-        c <- Configured[IO, String](k).run(map)
-      } yield c.shouldBe(v.validNec)
+      val map = fromMap[IO](Map(k -> v))
+      Configured[IO, String](k)
+        .run(map)
+        .map(c => c.shouldBe(v.validNec))
   }
 
   property("Primitive Int values") = forAllIO(genKV[Int]) {
     kv =>
       val k = kv.key
       val v = kv.v
-      for {
-        map <- fromMap[IO](Map(k -> v.toString))
-        c <- Configured[IO, Int](k).run(map)
-      } yield c.shouldBe(v.validNec)
+      val map = fromMap[IO](Map(k -> v.toString))
+      Configured[IO, Int](k)
+        .run(map)
+        .map(c => c.shouldBe(v.validNec))
   }
 
   property("Present Option[String] values") = forAllIO(genKV[String]) {
     kv =>
       val k = kv.key
       val v = kv.v
-      for {
-        map <- fromMap[IO](Map(s"${k}_OPT" -> v))
-        c <- Configured[IO, Option[String]](k).run(map)
-      } yield c.shouldBe(v.some.validNec)
+      val map = fromMap[IO](Map(s"${k}_OPT" -> v))
+      Configured[IO, Option[String]](k)
+        .run(map)
+        .map(c => c.shouldBe(v.some.validNec))
   }
 
   property("Present Option[Int] values") = forAllIO(genKV[Int]) {
     kv =>
       val k = kv.key
       val v = kv.v
-      for {
-        map <- fromMap[IO](Map(s"${k}_OPT" -> v.toString))
-        c <- Configured[IO, Option[Int]](k).run(map)
-      } yield c.shouldBe(v.some.validNec)
+      val map = fromMap[IO](Map(s"${k}_OPT" -> v.toString))
+      Configured[IO, Option[Int]](k)
+        .run(map)
+        .map(c => c.shouldBe(v.some.validNec))
   }
 
   property("Missing Option[String] values") = forAllIO(genKV[String]) {
     kv =>
       val k = kv.key
       val v = kv.v
-      for {
-        map <- fromMap[IO](Map(s"${k}_OPT" -> v))
-        c <- Configured[IO, Option[String]](s"${k}a").run(map)
-      } yield c.shouldBe(None.validNec)
+      val map = fromMap[IO](Map(s"${k}_OPT" -> v))
+      Configured[IO, Option[String]](s"${k}a")
+        .run(map)
+        .map(c => c.shouldBe(None.validNec))
   }
 
   property("Missing Option[Int] values") = forAllIO(genKV[String]) {
     kv =>
       val k = kv.key
       val v = kv.v
-      for {
-        map <- fromMap[IO](Map(s"${k}_OPT" -> v.toString))
-        c <- Configured[IO, Option[Int]](s"${k}a").run(map)
-      } yield c.shouldBe(None.validNec)
+      val map = fromMap[IO](Map(s"${k}_OPT" -> v.toString))
+      Configured[IO, Option[Int]](s"${k}a")
+        .run(map)
+        .map(c => c.shouldBe(None.validNec))
   }
 
   property("Misconfigured Option[Int] values") = forAllIO(genKV[Int]) {
     kv =>
       val k = kv.key
       val v = kv.v
-      for {
-        map <- fromMap[IO](Map(s"${k}_OPT" -> s"${v.toString}x"))
-        c <- Configured[IO, Option[Int]](k).run(map)
-      } yield c.shouldSatisfy {
-        case Validated.Invalid(nec) =>
-          nec.length.shouldBe(1) && nec.forall(_.isInstanceOf[ConfiguredError.InvalidValue])
-        case _ => false
-      }
+      val map = fromMap[IO](Map(s"${k}_OPT" -> s"${v.toString}x"))
+      Configured[IO, Option[Int]](k)
+        .run(map)
+        .map(
+          c =>
+            c.shouldSatisfy {
+              case Validated.Invalid(nec) =>
+                nec.length.shouldBe(1) && nec.forall(_.isInstanceOf[ConfiguredError.InvalidValue])
+              case _ => false
+            }
+        )
   }
 
   property("Present valid Double") = simpleTestIO {
     val k = "A_DOUBLE"
     val v = "1.23"
+    val map = fromMap[IO](Map(k -> v))
     for {
-      map <- fromMap[IO](Map(k -> v))
       c <- Configured[IO, Double]("A_DOUBLE").run(map)
     } yield c.shouldBe(1.23.validNec)
   }
@@ -109,19 +113,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
   property("Missing valid Double") = simpleTestIO {
     val k = "A_DOUBLE"
     val v = "1.23"
-    for {
-      map <- fromMap[IO](Map(k -> v))
-      c <- Configured[IO, Double]("MISSING").run(map)
-    } yield c.shouldBe(ConfiguredError.MissingValue("MISSING").invalidNec)
+    val map = fromMap[IO](Map(k -> v))
+    Configured[IO, Double]("MISSING")
+      .run(map)
+      .map(c => c.shouldBe(ConfiguredError.MissingValue("MISSING").invalidNec))
   }
 
   property("Invalid valid Double") = simpleTestIO {
     val k = "A_DOUBLE"
     val v = "1.23xxx"
-    for {
-      map <- fromMap[IO](Map(k -> v))
-      c <- Configured[IO, Double](k).run(map)
-    } yield c.shouldBe(ConfiguredError.InvalidValue(k, v).invalidNec)
+    val map = fromMap[IO](Map(k -> v))
+    Configured[IO, Double](k)
+      .run(map)
+      .map(c => c.shouldBe(ConfiguredError.InvalidValue(k, v).invalidNec))
   }
 
   ////
@@ -167,18 +171,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       "SOME_INT" -> "567"
     )
 
-  private def envIO: IO[Environment] =
-    Environment
-      .fromMap[IO](params)
-      .flatMap(inner => Environment.logging[IO](inner /*, println*/ ))
+  private def envIO: IO[Environment[IO]] =
+    IO(Environment.logging[IO](Environment.fromMap[IO](params), silencer[IO]))
 
   //  private def updatedEnv(mods: (String, String)*): Environment =
   //    Environment.logging[IO](Environment.fromMap(mods.foldLeft(params)((m, t) => m.updated(t._1, t._2))))
 
-  private def reducedEnvIO(keys: String*): IO[Environment] =
-    Environment
-      .fromMap[IO](params.filterNot(t => keys.contains(t._1)))
-      .flatMap(inner => Environment.logging[IO](inner /*, println*/ ))
+  private def reducedEnvIO(keys: String*): IO[Environment[IO]] =
+    IO(
+      Environment.logging[IO](
+        Environment.fromMap[IO](params.filterNot(t => keys.contains(t._1))),
+        silencer[IO]
+      )
+    )
 
   ////
 
@@ -405,7 +410,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
   final case class Endpoint(host: String, port: Int)
 
   object Endpoint {
-    implicit def configuredInstance[F[_]](implicit F: Applicative[F]): Configured[F, Endpoint] =
+    implicit def configuredInstance[F[_]](implicit F: Monad[F]): Configured[F, Endpoint] =
       (
         Configured[F, String].withSuffix("HOST"),
         Configured[F, Int].withSuffix("PORT")
@@ -415,7 +420,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
   final case class TwoEndpoints(ep1: Endpoint, ep2: Endpoint)
 
   object TwoEndpoints {
-    implicit def configuredInstance[F[_]](implicit F: Applicative[F]): Configured[F, TwoEndpoints] =
+    implicit def configuredInstance[F[_]](implicit F: Monad[F]): Configured[F, TwoEndpoints] =
       (
         Configured[F, Endpoint].withSuffix("EP1"),
         Configured[F, Endpoint].withSuffix("EP2")
@@ -426,7 +431,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
 
   object ThreeEndpoints {
     implicit def configuredInstance[F[_]](
-      implicit F: Applicative[F]
+      implicit F: Monad[F]
     ): Configured[F, ThreeEndpoints] =
       (
         Configured[F, Endpoint].withSuffix("EP1"),
