@@ -95,7 +95,7 @@ object Environment {
   def fromEnvVars[F[_]: Sync]: F[Environment[F]] =
     Sync[F]
       .delay(sys.env)
-      .map(m => fromMap(m))
+      .map(fromMap(_))
 
   def fromMap[F[_]: Applicative](map: Map[String, String]): Environment[F] =
     new Environment[F] {
