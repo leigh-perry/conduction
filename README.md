@@ -15,7 +15,7 @@
 
 ```scala
 // available for Scala 2.12, 2.13
-libraryDependencies += "com.github.leigh-perry" %% "conduction-core" % "0.3.5"
+libraryDependencies += "com.github.leigh-perry" %% "conduction-core" % "0.4.0"
 ```
 
 Configuration is via a configuration library that inductively derives the configuration for known
@@ -307,7 +307,7 @@ This means that if configuration errors are present, all errors are reported, ra
 # Release
 
 ```bash
-VERS=0.3.5
+VERS=0.4.0
 git tag -a v${VERS} -m "v${VERS}"
 git push origin v${VERS}
 ```
