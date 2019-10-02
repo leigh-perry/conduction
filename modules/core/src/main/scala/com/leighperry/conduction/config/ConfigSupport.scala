@@ -1,6 +1,9 @@
 package com.leighperry.conduction.config
 
-import cats.data.{ Kleisli, ValidatedNec }
+import java.io.{File, FileInputStream}
+import java.util.Properties
+
+import cats.data.{Kleisli, ValidatedNec}
 import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.applicative._
@@ -11,7 +14,7 @@ import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.syntax.validated._
-import cats.{ Applicative, Functor, Monad, Show }
+import cats.{Applicative, Functor, Monad, Show}
 
 /**
  * Support for reading detailed, nested configuration from environment variables etc
@@ -96,6 +99,18 @@ object Environment {
     Sync[F]
       .delay(sys.env)
       .map(fromMap(_))
+
+  def fromPropertiesFile[F[_]: Sync](filepath: String): F[Environment[F]] =
+    Sync[F].bracket(new FileInputStream(new File(filepath)).pure[F]) {
+      stream =>
+        val prop = new Properties()
+        prop.load(stream) // thanks, jdk
+
+        new Environment[F] {
+          override def get(key: String): F[Option[String]] =
+            Option(prop.get(key).asInstanceOf[String]).pure[F]
+        }.pure[F]
+    }(_.close().pure[F])
 
   def fromMap[F[_]: Applicative](map: Map[String, String]): Environment[F] =
     new Environment[F] {
