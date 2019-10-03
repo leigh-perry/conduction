@@ -154,7 +154,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "LP1_HOST" -> "lp1-host",
         "LP1_PORT" -> "1"
       ),
-      "test1"
+      "test01"
     )
   ) {
     e =>
@@ -172,7 +172,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "MULTI_EP2_HOST" -> "multi-ep2-host",
         "MULTI_EP2_PORT" -> "3"
       ),
-      "test2"
+      "test02"
     )
   ) {
     e =>
@@ -194,7 +194,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "MULTI_EP3_HOST" -> "multi-ep3-host",
         "MULTI_EP3_PORT" -> "4"
       ),
-      "test3"
+      "test03"
     )
   ) {
     e =>
@@ -216,7 +216,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "CHOICE_C1_HOST" -> "choice-c1-host",
         "CHOICE_C1_PORT" -> "5"
       ),
-      "test4"
+      "test04"
     )
   ) {
     e =>
@@ -232,7 +232,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "CHOICE_C1_HOST" -> "choice-c1-host",
         "CHOICE_C1_PORT" -> "5"
       ),
-      "test5"
+      "test05"
     )
   ) {
     e =>
@@ -248,7 +248,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "CHOICE_C1_HOST" -> "choice-c1-host",
         "CHOICE_C1_PORT" -> "5"
       ),
-      "test6"
+      "test06"
     )
   ) {
     e =>
@@ -268,7 +268,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "CHOICE_C2_HOST" -> "choice2-c2-host",
         "CHOICE_C2_PORT" -> "5"
       ),
-      "test7"
+      "test07"
     )
   ) {
     e =>
@@ -290,7 +290,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "CHOICE_C2_HOST" -> "choice2-c2-host",
         "CHOICE_C2_PORT" -> "5"
       ),
-      "test8"
+      "test08"
     )
   ) {
     e =>
@@ -320,7 +320,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "CHOICE_OPT_C2_C1_HOST" -> "choice-opt-c2-c1-host",
         "CHOICE_OPT_C2_C1_PORT" -> "9"
       ),
-      "test9"
+      "test09"
     )
   ) {
     e =>

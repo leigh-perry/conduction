@@ -256,10 +256,7 @@ object Configured {
             n => {
               List
                 .tabulate(n)(identity)
-                .traverse {
-                  i =>
-                    Configured[F, A](s"${name}_$i")
-                }
+                .traverse(i => Configured[F, A](s"${name}_$i"))
                 .map {
                   list: List[ValidatedNec[ConfiguredError, A]] =>
                     list.sequence
