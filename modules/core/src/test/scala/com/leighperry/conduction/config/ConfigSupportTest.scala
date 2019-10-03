@@ -10,7 +10,7 @@ import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
 import com.leighperry.conduction.config.testsupport.TestSupport
-import org.scalacheck.{Arbitrary, Gen, Properties}
+import org.scalacheck.{ Arbitrary, Gen, Properties }
 
 object ConfigSupportTest extends Properties("Config support") with TestSupport {
 
@@ -130,74 +130,33 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
 
   ////
 
-  val params: Map[String, String] =
-    Map(
-      "LP1_HOST" -> "lp1-host",
-      "LP1_PORT" -> "1",
-      "MULTI_EP1_HOST" -> "multi-ep1-host",
-      "MULTI_EP1_PORT" -> "2",
-      "MULTI_EP2_HOST" -> "multi-ep2-host",
-      "MULTI_EP2_PORT" -> "3",
-      "MULTI_EP3_HOST" -> "multi-ep3-host",
-      "MULTI_EP3_PORT" -> "4",
-      "CHOICE_C1_HOST" -> "choice-c1-host",
-      "CHOICE_C1_PORT" -> "5",
-      "CHOICE2_C1_C1_HOST" -> "choice-c1-c1-host",
-      "CHOICE2_C1_C1_PORT" -> "7",
-      "CHOICE2_C1_C2_HOST" -> "choice-c1-c2-host",
-      "CHOICE2_C1_C2_PORT" -> "8",
-      "CHOICE2_C2_HOST" -> "choice2-c2-host",
-      "CHOICE2_C2_PORT" -> "5",
-      "CHOICE_OPT_C2_C1_HOST" -> "choice-opt-c2-c1-host",
-      "CHOICE_OPT_C2_C1_PORT" -> "9",
-      "INTLIST_COUNT" -> "3",
-      "INTLIST_0" -> "1000",
-      "INTLIST_1" -> "1001",
-      "INTLIST_2" -> "1002",
-      "EPLIST_COUNT" -> "2",
-      "EPLIST_0_HOST" -> "eplist0-host",
-      "EPLIST_0_PORT" -> "2",
-      "EPLIST_1_HOST" -> "eplist1-host",
-      "EPLIST_1_PORT" -> "3",
-      "TEPLIST_COUNT" -> "2",
-      "TEPLIST_0_EP1_HOST" -> "teplist0-ep1-host",
-      "TEPLIST_0_EP1_PORT" -> "7",
-      "TEPLIST_0_EP2_HOST" -> "multilist-ep1-host0",
-      "TEPLIST_0_EP2_PORT" -> "7",
-      "TEPLIST_1_EP1_HOST" -> "teplist1-ep1-host",
-      "TEPLIST_1_EP1_PORT" -> "7",
-      "TEPLIST_1_EP2_HOST" -> "multilist-ep2-host1",
-      "TEPLIST_1_EP2_PORT" -> "7",
-      "SOME_INT" -> "567"
-    )
-
-  private def envIO: IO[Environment[IO]] =
+  private def envIO(params: Map[String, String]): IO[Environment[IO]] =
     IO(logging[IO](fromMap[IO](params), silencer[IO]))
 
-  private def propertyFileIO: IO[Environment[IO]] =
+  private def propertyFileIO(propertiesFilename: String): IO[Environment[IO]] =
     for {
-      fp <- IO(getClass.getClassLoader.getResource("testdata.properties"))
+      fp <- IO(getClass.getClassLoader.getResource(s"$propertiesFilename.properties"))
       ep <- fromPropertiesFile[IO](fp.getFile)
       q <- IO(logging[IO](ep, silencer[IO]))
     } yield q
 
-  private val genEnvIO: Gen[IO[Environment[IO]]] =
-    Gen.oneOf(Gen.const(envIO), Gen.const(propertyFileIO))
-
-  //  private def updatedEnv(mods: (String, String)*): Environment =
-  //    logging[IO](fromMap(mods.foldLeft(params)((m, t) => m.updated(t._1, t._2))))
-
-  private def reducedEnvIO(keys: String*): IO[Environment[IO]] =
-    IO(
-      logging[IO](
-        fromMap[IO](params.filterNot(t => keys.contains(t._1))),
-        silencer[IO]
-      )
-    )
+  private def genEnvIO(
+    params: Map[String, String],
+    propertiesFilename: String
+  ): Gen[IO[Environment[IO]]] =
+    Gen.oneOf(Gen.const(envIO(params)), Gen.const(propertyFileIO(propertiesFilename)))
 
   ////
 
-  property("Present valid Configured[IO, Endpoint]") = forAllIO(genEnvIO) {
+  property("Present valid Configured[IO, Endpoint]") = forAllIO(
+    genEnvIO(
+      Map(
+        "LP1_HOST" -> "lp1-host",
+        "LP1_PORT" -> "1"
+      ),
+      "test1"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -205,7 +164,17 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(Endpoint("lp1-host", 1).validNec)
   }
 
-  property("Present valid Configured[IO, TwoEndpoints]") = forAllIO(genEnvIO) {
+  property("Present valid Configured[IO, TwoEndpoints]") = forAllIO(
+    genEnvIO(
+      Map(
+        "MULTI_EP1_HOST" -> "multi-ep1-host",
+        "MULTI_EP1_PORT" -> "2",
+        "MULTI_EP2_HOST" -> "multi-ep2-host",
+        "MULTI_EP2_PORT" -> "3"
+      ),
+      "test2"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -215,7 +184,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       )
   }
 
-  property("Present valid Configured[IO, ThreeEndpoints]") = forAllIO(genEnvIO) {
+  property("Present valid Configured[IO, ThreeEndpoints]") = forAllIO(
+    genEnvIO(
+      Map(
+        "MULTI_EP1_HOST" -> "multi-ep1-host",
+        "MULTI_EP1_PORT" -> "2",
+        "MULTI_EP2_HOST" -> "multi-ep2-host",
+        "MULTI_EP2_PORT" -> "3",
+        "MULTI_EP3_HOST" -> "multi-ep3-host",
+        "MULTI_EP3_PORT" -> "4"
+      ),
+      "test3"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -229,7 +210,15 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       )
   }
 
-  property("Present valid Configured[IO, Either[Endpoint, Endpoint]]") = forAllIO(genEnvIO) {
+  property("Present valid Configured[IO, Either[Endpoint, Endpoint]]") = forAllIO(
+    genEnvIO(
+      Map(
+        "CHOICE_C1_HOST" -> "choice-c1-host",
+        "CHOICE_C1_PORT" -> "5"
+      ),
+      "test4"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -237,16 +226,31 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid)
   }
 
-  property("Present valid Configured[IO, Either[Endpoint, Endpoint]] via `or` syntax") =
-    forAllIO(genEnvIO) {
-      e =>
-        for {
-          env <- e
-          c <- Configured[IO, Endpoint].or(Configured[IO, Endpoint]).value("CHOICE").run(env)
-        } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid)
-    }
+  property("Present valid Configured[IO, Either[Endpoint, Endpoint]] via `or` syntax") = forAllIO(
+    genEnvIO(
+      Map(
+        "CHOICE_C1_HOST" -> "choice-c1-host",
+        "CHOICE_C1_PORT" -> "5"
+      ),
+      "test5"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- Configured[IO, Endpoint].or(Configured[IO, Endpoint]).value("CHOICE").run(env)
+      } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid)
+  }
 
-  property("Missing Configured[IO, Either[Endpoint, Endpoint]]") = forAllIO(genEnvIO) {
+  property("Missing Configured[IO, Either[Endpoint, Endpoint]]") = forAllIO(
+    genEnvIO(
+      Map(
+        "CHOICE_C1_HOST" -> "choice-c1-host",
+        "CHOICE_C1_PORT" -> "5"
+      ),
+      "test6"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -254,24 +258,41 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid)
   }
 
-  property("Present valid Configured[IO, Either[Either[Endpoint, Endpoint]], Endpoint]") =
-    forAllIO(genEnvIO) {
-      e =>
-        for {
-          env <- e
-          c <- Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]("CHOICE2").run(env)
-        } yield c.shouldBe(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
-    }
+  property("Present valid Configured[IO, Either[Either[Endpoint, Endpoint]], Endpoint]") = forAllIO(
+    genEnvIO(
+      Map(
+        "CHOICE_C1_C1_HOST" -> "choice-c1-c1-host",
+        "CHOICE_C1_C1_PORT" -> "7",
+        "CHOICE_C1_C2_HOST" -> "choice-c1-c2-host",
+        "CHOICE_C1_C2_PORT" -> "8",
+        "CHOICE_C2_HOST" -> "choice2-c2-host",
+        "CHOICE_C2_PORT" -> "5"
+      ),
+      "test7"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]("CHOICE").run(env)
+      } yield c.shouldBe(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
+  }
 
-  //      "CHOICE2_C1_C1_HOST" -> "choice-c1-c1-host",
-  //      "CHOICE2_C1_C1_PORT" -> "7",
-  //      "CHOICE2_C1_C2_HOST" -> "choice-c1-c2-host",
-  //      "CHOICE2_C1_C2_PORT" -> "8",
-  //      "CHOICE2_C2_HOST" -> "choice-c1-host",
-  //      "CHOICE2_C2_PORT" -> "5",
   property(
     "Present valid Configured[IO, Either[Either[Endpoint, Endpoint]], Endpoint] left/left via `or` syntax"
-  ) = forAllIO(genEnvIO) {
+  ) = forAllIO(
+    genEnvIO(
+      Map(
+        "CHOICE_C1_C1_HOST" -> "choice-c1-c1-host",
+        "CHOICE_C1_C1_PORT" -> "7",
+        "CHOICE_C1_C2_HOST" -> "choice-c1-c2-host",
+        "CHOICE_C1_C2_PORT" -> "8",
+        "CHOICE_C2_HOST" -> "choice2-c2-host",
+        "CHOICE_C2_PORT" -> "5"
+      ),
+      "test8"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -281,7 +302,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
               .or[Endpoint](Configured[IO, Endpoint])
               .or[Endpoint](Configured[IO, Endpoint])
           cfg
-            .value("CHOICE2")
+            .value("CHOICE")
             .run(env)
         }
       } yield c.shouldBe(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
@@ -289,65 +310,71 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
 
   property(
     "Present valid Configured[IO, Either[Either[Endpoint, Endpoint]], Endpoint] left/right via `or` syntax"
-  ) = simpleTestIO {
-    for {
-      env <- reducedEnvIO("CHOICE2_C1_C1_HOST", "CHOICE2_C1_C1_PORT")
-      c <- {
-        val cfg: Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]] =
-          Configured[IO, Endpoint].or(Configured[IO, Endpoint]).or(Configured[IO, Endpoint])
-        cfg
-          .value("CHOICE2")
-          .run(env)
-      }
-    } yield c.shouldBe(Endpoint("choice-c1-c2-host", 8).asRight.asLeft.validNec)
-  }
-
-  property("Present valid Configured[IO, Either[Either[,]], Endpoint] right via `or` syntax") =
-    simpleTestIO {
+  ) = forAllIO(
+    genEnvIO(
+      Map(
+        "CHOICE_C1_C2_HOST" -> "choice-c1-c2-host",
+        "CHOICE_C1_C2_PORT" -> "8",
+        "CHOICE_C2_HOST" -> "choice2-c2-host",
+        "CHOICE_C2_PORT" -> "5",
+        "CHOICE_OPT_C2_C1_HOST" -> "choice-opt-c2-c1-host",
+        "CHOICE_OPT_C2_C1_PORT" -> "9"
+      ),
+      "test9"
+    )
+  ) {
+    e =>
       for {
-        env <- reducedEnvIO(
-          "CHOICE2_C1_C1_HOST",
-          "CHOICE2_C1_C1_PORT",
-          "CHOICE2_C1_C2_HOST",
-          "CHOICE2_C1_C2_PORT"
-        )
+        env <- e
         c <- {
           val cfg: Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]] =
             Configured[IO, Endpoint].or(Configured[IO, Endpoint]).or(Configured[IO, Endpoint])
           cfg
-            .value("CHOICE2")
+            .value("CHOICE")
             .run(env)
         }
-      } yield c.shouldBe(Endpoint("choice2-c2-host", 5).asRight.validNec)
-    }
+      } yield c.shouldBe(Endpoint("choice-c1-c2-host", 8).asRight.asLeft.validNec)
+  }
 
-  property("Missing Configured[IO, Either[Endpoint, Either[Endpoint, Endpoint]]]") =
-    forAllIO(genEnvIO) {
+  property("Present valid Configured[IO, Either[Either[,]], Endpoint] right via `or` syntax") =
+    forAllIO(
+      genEnvIO(
+        Map(
+          "CHOICE_C2_HOST" -> "choice2-c2-host",
+          "CHOICE_C2_PORT" -> "5"
+        ),
+        "test10"
+      )
+    ) {
       e =>
         for {
           env <- e
-          c <- Configured[IO, Either[Endpoint, Either[Endpoint, Endpoint]]]("CHOICEx").run(env)
-          // NonEmptyChain doesn't support ==
-          //      .assertIsEq(
-          //        NonEmptyChain(
-          //          ConfiguredError.MissingValue("CHOICEx_C1_HOST"),
-          //          ConfiguredError.MissingValue("CHOICEx_C1_PORT"),
-          //          ConfiguredError.MissingValue("CHOICEx_C2_C1_HOST"),
-          //          ConfiguredError.MissingValue("CHOICEx_C2_C1_PORT"),
-          //          ConfiguredError.MissingValue("CHOICEx_C2_C2_HOST"),
-          //          ConfiguredError.MissingValue("CHOICEx_C2_C2_PORT")
-          //        ).invalid
-          //      )
+          c <- {
+            val cfg: Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]] =
+              Configured[IO, Endpoint].or(Configured[IO, Endpoint]).or(Configured[IO, Endpoint])
+            cfg
+              .value("CHOICE")
+              .run(env)
+          }
+        } yield c.shouldBe(Endpoint("choice2-c2-host", 5).asRight.validNec)
+    }
+
+  property("Missing Configured[IO, Either[Endpoint, Either[Endpoint, Endpoint]]]") =
+    forAllIO(genEnvIO(Map.empty, "empty")) {
+      e =>
+        for {
+          env <- e
+          c <- Configured[IO, Either[Endpoint, Either[Endpoint, Endpoint]]]("CHOICE").run(env)
         } yield c.shouldSatisfy(
           _.fold(
             e => {
               e.length == 6 &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICEx_C1_HOST")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICEx_C1_PORT")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICEx_C2_C1_HOST")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICEx_C2_C1_PORT")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICEx_C2_C2_HOST")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICEx_C2_C2_PORT"))
+                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C1_HOST")) &&
+                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C1_PORT")) &&
+                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C2_C1_HOST")) &&
+                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C2_C1_PORT")) &&
+                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C2_C2_HOST")) &&
+                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C2_C2_PORT"))
             },
             _ => false
           )
@@ -355,7 +382,15 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     }
 
   property("Present valid Configured[IO, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") =
-    forAllIO(genEnvIO) {
+    forAllIO(
+      genEnvIO(
+        Map(
+          "CHOICE_OPT_C2_C1_HOST" -> "choice-opt-c2-c1-host",
+          "CHOICE_OPT_C2_C1_PORT" -> "9"
+        ),
+        "test11"
+      )
+    ) {
       e =>
         for {
           env <- e
@@ -365,16 +400,26 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     }
 
   property("Missing Configured[IO, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") =
-    forAllIO(genEnvIO) {
+    forAllIO(genEnvIO(Map.empty, "empty")) {
       e =>
         for {
           env <- e
-          c <- Configured[IO, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]("CHOICEx")
+          c <- Configured[IO, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]("CHOICE")
             .run(env)
         } yield c.shouldBe(None.validNec)
     }
 
-  property("Present valid Configured[IO, List[Int]]") = forAllIO(genEnvIO) {
+  property("Present valid Configured[IO, List[Int]]") = forAllIO(
+    genEnvIO(
+      Map(
+        "INTLIST_COUNT" -> "3",
+        "INTLIST_0" -> "1000",
+        "INTLIST_1" -> "1001",
+        "INTLIST_2" -> "1002"
+      ),
+      "test12"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -382,15 +427,26 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(List(1000, 1001, 1002).validNec)
   }
 
-  property("Missing Configured[IO, List[Int]]") = forAllIO(genEnvIO) {
+  property("Missing Configured[IO, List[Int]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
     e =>
       for {
         env <- e
-        c <- Configured[IO, List[Int]]("INTLISTx").run(env)
-      } yield c.shouldBe(ConfiguredError.MissingValue("INTLISTx_COUNT").invalidNec)
+        c <- Configured[IO, List[Int]]("INTLIST").run(env)
+      } yield c.shouldBe(ConfiguredError.MissingValue("INTLIST_COUNT").invalidNec)
   }
 
-  property("Present valid Configured[IO, List[Endpoint]]") = forAllIO(genEnvIO) {
+  property("Present valid Configured[IO, List[Endpoint]]") = forAllIO(
+    genEnvIO(
+      Map(
+        "EPLIST_COUNT" -> "2",
+        "EPLIST_0_HOST" -> "eplist0-host",
+        "EPLIST_0_PORT" -> "2",
+        "EPLIST_1_HOST" -> "eplist1-host",
+        "EPLIST_1_PORT" -> "3"
+      ),
+      "test13"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -398,15 +454,31 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(List(Endpoint("eplist0-host", 2), Endpoint("eplist1-host", 3)).validNec)
   }
 
-  property("Missing Configured[IO, List[Endpoint]]") = forAllIO(genEnvIO) {
+  property("Missing Configured[IO, List[Endpoint]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
     e =>
       for {
         env <- e
-        c <- Configured[IO, List[Endpoint]]("EPLISTx").run(env)
-      } yield c.shouldBe(ConfiguredError.MissingValue("EPLISTx_COUNT").invalidNec)
+        c <- Configured[IO, List[Endpoint]]("EPLIST").run(env)
+      } yield c.shouldBe(ConfiguredError.MissingValue("EPLIST_COUNT").invalidNec)
   }
 
-  property("Present valid Configured[IO, List[TwoEndpoints]]") = forAllIO(genEnvIO) {
+  property("Present valid Configured[IO, List[TwoEndpoints]]") = forAllIO(
+    genEnvIO(
+      Map(
+        "TEPLIST_COUNT" -> "2",
+        "TEPLIST_0_EP1_HOST" -> "teplist0-ep1-host",
+        "TEPLIST_0_EP1_PORT" -> "7",
+        "TEPLIST_0_EP2_HOST" -> "multilist-ep1-host0",
+        "TEPLIST_0_EP2_PORT" -> "7",
+        "TEPLIST_1_EP1_HOST" -> "teplist1-ep1-host",
+        "TEPLIST_1_EP1_PORT" -> "7",
+        "TEPLIST_1_EP2_HOST" -> "multilist-ep2-host1",
+        "TEPLIST_1_EP2_PORT" -> "7",
+        "SOME_INT" -> "567"
+      ),
+      "test14"
+    )
+  ) {
     e =>
       for {
         env <- e
@@ -419,15 +491,22 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       )
   }
 
-  property("Missing Configured[IO, List[TwoEndpoints]]") = forAllIO(genEnvIO) {
+  property("Missing Configured[IO, List[TwoEndpoints]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
     e =>
       for {
         env <- e
-        c <- Configured[IO, List[TwoEndpoints]]("TEPLISTx").run(env)
-      } yield c.shouldBe(ConfiguredError.MissingValue("TEPLISTx_COUNT").invalidNec)
+        c <- Configured[IO, List[TwoEndpoints]]("TEPLIST").run(env)
+      } yield c.shouldBe(ConfiguredError.MissingValue("TEPLIST_COUNT").invalidNec)
   }
 
-  property("Configured should handle newtypes") = forAllIO(genEnvIO) {
+  property("Configured should handle newtypes") = forAllIO(
+    genEnvIO(
+      Map(
+        "SOME_INT" -> "567"
+      ),
+      "test15"
+    )
+  ) {
     e =>
       for {
         env <- e

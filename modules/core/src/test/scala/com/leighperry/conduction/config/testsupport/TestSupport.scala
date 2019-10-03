@@ -1,11 +1,13 @@
 package com.leighperry.conduction.config.testsupport
 
+import java.io.{PrintWriter, StringWriter}
+
 import cats.Eq
 import cats.effect.IO
 import cats.syntax.eq._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.util.Pretty
-import org.scalacheck.{ Arbitrary, Gen, Prop, Shrink }
+import org.scalacheck.{Arbitrary, Gen, Prop, Shrink}
 
 final class TestSupportOps[A](val actual: A) {
   def shouldBe(expected: A): Boolean = {
@@ -28,7 +30,7 @@ final class TestSupportOps[A](val actual: A) {
 }
 
 trait ToTestSupportOps {
-  implicit def `Ops for TestSupport`[A](actual: A): TestSupportOps[A] =
+  implicit def instanceTestSupport[A](actual: A): TestSupportOps[A] =
     new TestSupportOps[A](actual)
 }
 
@@ -51,7 +53,7 @@ final class TestSupportEqOps[A: Eq](val actual: A) {
 }
 
 trait ToTestSupportEqOps {
-  implicit def `Ops for TestSupport Eq`[A: Eq](actual: A): TestSupportEqOps[A] =
+  implicit def instanceTestSupportEq[A: Eq](actual: A): TestSupportEqOps[A] =
     new TestSupportEqOps[A](actual)
 }
 
@@ -85,7 +87,7 @@ final class TestSupportIOOps[E, A](val io: IO[A]) {
 }
 
 trait ToTestSupportIOOps {
-  implicit def `instanceTestSupportIO`[E, A](io: IO[A]): TestSupportIOOps[E, A] =
+  implicit def instanceTestSupportIO[E, A](io: IO[A]): TestSupportIOOps[E, A] =
     new TestSupportIOOps[E, A](io)
 }
 
