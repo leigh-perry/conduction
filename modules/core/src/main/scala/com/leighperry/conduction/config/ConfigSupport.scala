@@ -1,9 +1,9 @@
 package com.leighperry.conduction.config
 
-import java.io.{File, FileInputStream}
+import java.io.{ File, FileInputStream }
 import java.util.Properties
 
-import cats.data.{Kleisli, ValidatedNec}
+import cats.data.{ Kleisli, ValidatedNec }
 import cats.effect.Sync
 import cats.instances.list._
 import cats.syntax.applicative._
@@ -14,7 +14,7 @@ import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.traverse._
 import cats.syntax.validated._
-import cats.{Applicative, Functor, Monad, Show}
+import cats.{ Applicative, Functor, Monad, Show }
 
 /**
  * Support for reading detailed, nested configuration from environment variables etc
@@ -232,7 +232,7 @@ object Configured {
       override def value(
         name: String
       ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, Option[A]]] =
-        Configured[F, A](s"${name}_OPT").map {
+        Configured[F, A](name).map {
           _.fold(
             c =>
               if (c.forall(_.isInstanceOf[ConfiguredError.MissingValue])) None.validNec

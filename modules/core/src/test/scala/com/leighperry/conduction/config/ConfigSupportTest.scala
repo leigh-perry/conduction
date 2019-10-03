@@ -48,7 +48,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     kv =>
       val k = kv.key
       val v = kv.v
-      val map = fromMap[IO](Map(s"${k}_OPT" -> v))
+      val map = fromMap[IO](Map(k -> v))
       Configured[IO, Option[String]](k)
         .run(map)
         .map(c => c.shouldBe(v.some.validNec))
@@ -58,7 +58,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     kv =>
       val k = kv.key
       val v = kv.v
-      val map = fromMap[IO](Map(s"${k}_OPT" -> v.toString))
+      val map = fromMap[IO](Map(k -> v.toString))
       Configured[IO, Option[Int]](k)
         .run(map)
         .map(c => c.shouldBe(v.some.validNec))
@@ -68,7 +68,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     kv =>
       val k = kv.key
       val v = kv.v
-      val map = fromMap[IO](Map(s"${k}_OPT" -> v))
+      val map = fromMap[IO](Map(k -> v))
       Configured[IO, Option[String]](s"${k}a")
         .run(map)
         .map(c => c.shouldBe(None.validNec))
@@ -78,7 +78,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     kv =>
       val k = kv.key
       val v = kv.v
-      val map = fromMap[IO](Map(s"${k}_OPT" -> v.toString))
+      val map = fromMap[IO](Map(k -> v.toString))
       Configured[IO, Option[Int]](s"${k}a")
         .run(map)
         .map(c => c.shouldBe(None.validNec))
@@ -88,7 +88,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     kv =>
       val k = kv.key
       val v = kv.v
-      val map = fromMap[IO](Map(s"${k}_OPT" -> s"${v.toString}x"))
+      val map = fromMap[IO](Map(k -> s"${v.toString}x"))
       Configured[IO, Option[Int]](k)
         .run(map)
         .map(
@@ -385,8 +385,8 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     forAllIO(
       genEnvIO(
         Map(
-          "CHOICE_OPT_C2_C1_HOST" -> "choice-opt-c2-c1-host",
-          "CHOICE_OPT_C2_C1_PORT" -> "9"
+          "CHOICE_C2_C1_HOST" -> "choice-opt-c2-c1-host",
+          "CHOICE_C2_C1_PORT" -> "9"
         ),
         "test11"
       )
