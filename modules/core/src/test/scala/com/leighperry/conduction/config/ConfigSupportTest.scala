@@ -1,7 +1,7 @@
 package com.leighperry.conduction.config
 
 import cats.Monad
-import cats.data.Validated
+import cats.data.{ NonEmptyChain, Validated }
 import cats.effect.IO
 import cats.syntax.contravariantSemigroupal._
 import cats.syntax.either._
@@ -116,7 +116,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     val map = fromMap[IO](Map(k -> v))
     Configured[IO, Double]("MISSING")
       .run(map)
-      .map(c => c.shouldBe(ConfiguredError.MissingValue("MISSING").invalidNec))
+      .map(c => c.shouldBe(ConfiguredError.missingValue("MISSING").invalidNec))
   }
 
   property("Invalid valid Double") = simpleTestIO {
@@ -125,7 +125,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     val map = fromMap[IO](Map(k -> v))
     Configured[IO, Double](k)
       .run(map)
-      .map(c => c.shouldBe(ConfiguredError.InvalidValue(k, v).invalidNec))
+      .map(c => c.shouldBe(ConfiguredError.invalidValue(k, v).invalidNec))
   }
 
   ////
@@ -367,15 +367,17 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
           c <- Configured[IO, Either[Endpoint, Either[Endpoint, Endpoint]]]("CHOICE").run(env)
         } yield c.shouldSatisfy(
           _.fold(
-            e => {
-              e.length == 6 &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C1_HOST")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C1_PORT")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C2_C1_HOST")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C2_C1_PORT")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C2_C2_HOST")) &&
-                e.exists(_ == ConfiguredError.MissingValue("CHOICE_C2_C2_PORT"))
-            },
+            e =>
+              e.shouldBeNec(
+                NonEmptyChain(
+                  ConfiguredError.MissingValue(NonEmptyChain("CHOICE", "C1", "HOST")),
+                  ConfiguredError.MissingValue(NonEmptyChain("CHOICE", "C1", "PORT")),
+                  ConfiguredError.MissingValue(NonEmptyChain("CHOICE", "C2", "C1", "HOST")),
+                  ConfiguredError.MissingValue(NonEmptyChain("CHOICE", "C2", "C1", "PORT")),
+                  ConfiguredError.MissingValue(NonEmptyChain("CHOICE", "C2", "C2", "HOST")),
+                  ConfiguredError.MissingValue(NonEmptyChain("CHOICE", "C2", "C2", "PORT"))
+                )
+              ),
             _ => false
           )
         )
@@ -432,7 +434,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, List[Int]]("INTLIST").run(env)
-      } yield c.shouldBe(ConfiguredError.MissingValue("INTLIST_COUNT").invalidNec)
+      } yield c.shouldBe(ConfiguredError.MissingValue(NonEmptyChain("INTLIST", "COUNT")).invalidNec)
   }
 
   property("Present valid Configured[IO, List[Endpoint]]") = forAllIO(
@@ -459,7 +461,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, List[Endpoint]]("EPLIST").run(env)
-      } yield c.shouldBe(ConfiguredError.MissingValue("EPLIST_COUNT").invalidNec)
+      } yield c.shouldBe(ConfiguredError.MissingValue(NonEmptyChain("EPLIST", "COUNT")).invalidNec)
   }
 
   property("Present valid Configured[IO, List[TwoEndpoints]]") = forAllIO(
@@ -474,7 +476,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "TEPLIST_1_EP1_PORT" -> "7",
         "TEPLIST_1_EP2_HOST" -> "multilist-ep2-host1",
         "TEPLIST_1_EP2_PORT" -> "7",
-        "SOME_INT" -> "567"
+        "SOMEINT" -> "567"
       ),
       "test14"
     )
@@ -496,13 +498,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, List[TwoEndpoints]]("TEPLIST").run(env)
-      } yield c.shouldBe(ConfiguredError.MissingValue("TEPLIST_COUNT").invalidNec)
+      } yield c.shouldBe(ConfiguredError.MissingValue(NonEmptyChain("TEPLIST", "COUNT")).invalidNec)
   }
 
   property("Configured should handle newtypes") = forAllIO(
     genEnvIO(
       Map(
-        "SOME_INT" -> "567"
+        "SOMEINT" -> "567"
       ),
       "test15"
     )
@@ -510,7 +512,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     e =>
       for {
         env <- e
-        c <- Configured[IO, Int].map(i => s"int[$i]").value("SOME_INT").run(env)
+        c <- Configured[IO, Int].map(i => s"int[$i]").value("SOMEINT").run(env)
       } yield c.shouldBe("int[567]".validNec)
   }
 

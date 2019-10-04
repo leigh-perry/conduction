@@ -71,7 +71,7 @@ lazy val hocon =
           typesafeConfig
         )
     )
-  .dependsOn(core % "compile->compile;test->test")
+    .dependsOn(core % "compile->compile;test->test")
 
 lazy val allModules = List(core, hocon)
 

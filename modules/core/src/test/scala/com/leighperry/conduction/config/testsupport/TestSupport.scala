@@ -1,13 +1,12 @@
 package com.leighperry.conduction.config.testsupport
 
-import java.io.{PrintWriter, StringWriter}
-
 import cats.Eq
+import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.syntax.eq._
 import org.scalacheck.Prop.forAll
 import org.scalacheck.util.Pretty
-import org.scalacheck.{Arbitrary, Gen, Prop, Shrink}
+import org.scalacheck.{ Arbitrary, Gen, Prop, Shrink }
 
 final class TestSupportOps[A](val actual: A) {
   def shouldBe(expected: A): Boolean = {
@@ -32,6 +31,21 @@ final class TestSupportOps[A](val actual: A) {
 trait ToTestSupportOps {
   implicit def instanceTestSupport[A](actual: A): TestSupportOps[A] =
     new TestSupportOps[A](actual)
+}
+
+////
+
+final class TestSupportNecOps[A](val actual: NonEmptyChain[A]) {
+
+  def shouldBeNec(expected: NonEmptyChain[A]): Boolean =
+    expected.length == actual.length &&
+      expected.forall(a => actual.exists(_ == a))
+
+}
+
+trait ToTestSupportNecOps {
+  implicit def instanceTestSupport[A](actual: NonEmptyChain[A]): TestSupportNecOps[A] =
+    new TestSupportNecOps[A](actual)
 }
 
 ////
@@ -154,6 +168,7 @@ trait TestSupportScalacheck {
 
 trait TestSupport
   extends ToTestSupportOps
+  with ToTestSupportNecOps
   with ToTestSupportEqOps
   with ToTestSupportIOOps
   with TestSupportGens
