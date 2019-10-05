@@ -1,6 +1,7 @@
 package com.leighperry.conduction.config.testsupport
 
 import cats.Eq
+import cats.data.NonEmptyChain
 import cats.effect.IO
 import cats.syntax.eq._
 import org.scalacheck.Prop.forAll
@@ -28,8 +29,23 @@ final class TestSupportOps[A](val actual: A) {
 }
 
 trait ToTestSupportOps {
-  implicit def `Ops for TestSupport`[A](actual: A): TestSupportOps[A] =
+  implicit def instanceTestSupport[A](actual: A): TestSupportOps[A] =
     new TestSupportOps[A](actual)
+}
+
+////
+
+final class TestSupportNecOps[A](val actual: NonEmptyChain[A]) {
+
+  def shouldBeNec(expected: NonEmptyChain[A]): Boolean =
+    expected.length == actual.length &&
+      expected.forall(a => actual.exists(_ == a))
+
+}
+
+trait ToTestSupportNecOps {
+  implicit def instanceTestSupport[A](actual: NonEmptyChain[A]): TestSupportNecOps[A] =
+    new TestSupportNecOps[A](actual)
 }
 
 ////
@@ -51,7 +67,7 @@ final class TestSupportEqOps[A: Eq](val actual: A) {
 }
 
 trait ToTestSupportEqOps {
-  implicit def `Ops for TestSupport Eq`[A: Eq](actual: A): TestSupportEqOps[A] =
+  implicit def instanceTestSupportEq[A: Eq](actual: A): TestSupportEqOps[A] =
     new TestSupportEqOps[A](actual)
 }
 
@@ -85,7 +101,7 @@ final class TestSupportIOOps[E, A](val io: IO[A]) {
 }
 
 trait ToTestSupportIOOps {
-  implicit def `instanceTestSupportIO`[E, A](io: IO[A]): TestSupportIOOps[E, A] =
+  implicit def instanceTestSupportIO[E, A](io: IO[A]): TestSupportIOOps[E, A] =
     new TestSupportIOOps[E, A](io)
 }
 
@@ -152,6 +168,7 @@ trait TestSupportScalacheck {
 
 trait TestSupport
   extends ToTestSupportOps
+  with ToTestSupportNecOps
   with ToTestSupportEqOps
   with ToTestSupportIOOps
   with TestSupportGens

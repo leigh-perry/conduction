@@ -61,7 +61,19 @@ lazy val core =
         )
     )
 
-lazy val allModules = List(core)
+lazy val hocon =
+  module("hocon")
+    .settings(
+      libraryDependencies ++=
+        Seq(
+          cats,
+          catsEffect,
+          typesafeConfig
+        )
+    )
+    .dependsOn(core % "compile->compile;test->test")
+
+lazy val allModules = List(core, hocon)
 
 lazy val root =
   project
@@ -78,7 +90,7 @@ addCommandAlias("fmtcheck", "all scalafmtSbtCheck scalafmtCheck test:scalafmtChe
 def module(moduleName: String): Project =
   Project(moduleName, file("modules/" + moduleName))
     .settings(crossBuiltCommonSettings)
-    .settings(name += s"-$moduleName")
+    .settings(name += s"-$moduleName") // for artifact naming
 
 def versionDependentExtraScalacOptions(scalaVersion: String) =
   CrossVersion.partialVersion(scalaVersion) match {
