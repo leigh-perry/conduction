@@ -2,14 +2,13 @@ package com.leighperry.conduction.config.hocon
 
 import java.io.File
 
-import cats.data.NonEmptyChain
 import cats.effect.Sync
 import cats.instances.string._
 import cats.syntax.either._
 import cats.syntax.foldable._
 import cats.syntax.functor._
 import com.leighperry.conduction.config.Environment
-import com.typesafe.config.{ ConfigException, ConfigFactory }
+import com.typesafe.config.{ConfigException, ConfigFactory}
 
 object HoconEnvironment {
 
@@ -19,7 +18,7 @@ object HoconEnvironment {
     }.map {
       ts =>
         new Environment[F] {
-          override def get(key: NonEmptyChain[String]): F[Option[String]] =
+          override def get(key: Environment.Key): F[Option[String]] =
             Sync[F].delay {
               val keyString = key.intercalate(".")
               Either
