@@ -79,8 +79,8 @@ object Conversion {
 trait ConfiguredError
 
 object ConfiguredError {
-  final case class MissingValue(name: NonEmptyChain[String]) extends ConfiguredError
-  final case class InvalidValue(name: NonEmptyChain[String], value: String) extends ConfiguredError
+  final case class MissingValue(name: Environment.Key) extends ConfiguredError
+  final case class InvalidValue(name: Environment.Key, value: String) extends ConfiguredError
 
   def missingValue(name: String): ConfiguredError =
     MissingValue(NonEmptyChain(name))
@@ -98,10 +98,16 @@ object ConfiguredError {
 ////
 
 trait Environment[F[_]] {
-  def get(key: NonEmptyChain[String]): F[Option[String]]
+  def get(key: Environment.Key): F[Option[String]]
 }
 
 object Environment {
+  type Key = NonEmptyChain[String]
+
+  object Key {
+    def apply(head: String, tail: String*): Key =
+      Environment.Key(head, tail: _*)
+  }
 
   def fromEnvVars[F[_]: Sync]: F[Environment[F]] =
     Sync[F]
@@ -116,7 +122,7 @@ object Environment {
           prop.load(stream) // thanks, jdk
 
           new Environment[F] {
-            override def get(key: NonEmptyChain[String]): F[Option[String]] =
+            override def get(key: Environment.Key): F[Option[String]] =
               Option(prop.get(key.intercalate(separator)))
                 .map(_.asInstanceOf[String]) // thanks, jdk
                 .pure[F]
@@ -129,7 +135,7 @@ object Environment {
     separator: String = "_"
   ): Environment[F] =
     new Environment[F] {
-      override def get(key: NonEmptyChain[String]): F[Option[String]] =
+      override def get(key: Environment.Key): F[Option[String]] =
         map
           .get(key.intercalate(separator))
           .pure[F] // TODO make intercalate an Env policy
@@ -143,7 +149,7 @@ object Environment {
 
   def logging[F[_]: Monad](inner: Environment[F], log: String => F[Unit]): Environment[F] =
     new Environment[F] {
-      override def get(key: NonEmptyChain[String]): F[Option[String]] =
+      override def get(key: Environment.Key): F[Option[String]] =
         for {
           value <- inner.get(key)
           _ <- value.fold(log(s"Not configured: $key"))(v => log(s"$key => $v"))
@@ -157,18 +163,18 @@ trait Configured[F[_], A] {
   self =>
 
   def value(
-    name: NonEmptyChain[String]
+    name: Environment.Key
   ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]]
 
   def value(name: String): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]] =
-    value(NonEmptyChain(name))
+    value(NonEmptyChain(name): Environment.Key)
 
   ////
 
   def withSuffix(suffix: String): Configured[F, A] =
     new Configured[F, A] {
       override def value(
-        name: NonEmptyChain[String]
+        name: Environment.Key
       ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]] =
         self.value(name = name :+ suffix)
     }
@@ -182,7 +188,7 @@ trait Configured[F[_], A] {
   )(implicit F: Functor[F]): Configured[F, B] =
     new Configured[F, B] {
       override def value(
-        name: NonEmptyChain[String]
+        name: Environment.Key
       ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, B]] =
         self
           .value(name)
@@ -192,7 +198,7 @@ trait Configured[F[_], A] {
   def or[B](cb: Configured[F, B])(implicit F: Monad[F]): Configured[F, Either[A, B]] =
     new Configured[F, Either[A, B]] {
       override def value(
-        name: NonEmptyChain[String]
+        name: Environment.Key
       ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, Either[A, B]]] =
         self.value(name :+ "C1").flatMap {
           _.fold(
@@ -218,7 +224,7 @@ object Configured {
   ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]] =
     F.value(NonEmptyChain(name))
 
-  def apply[F[_], A](name: NonEmptyChain[String])(
+  def apply[F[_], A](name: Environment.Key)(
     implicit F: Configured[F, A]
   ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]] =
     F.value(name)
@@ -228,7 +234,7 @@ object Configured {
   implicit def configuredA[F[_]: Monad, A: Conversion]: Configured[F, A] =
     new Configured[F, A] {
       override def value(
-        name: NonEmptyChain[String]
+        name: Environment.Key
       ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]] =
         Kleisli {
           env =>
@@ -257,7 +263,7 @@ object Configured {
   ): Configured[F, Option[A]] =
     new Configured[F, Option[A]] {
       override def value(
-        name: NonEmptyChain[String]
+        name: Environment.Key
       ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, Option[A]]] =
         Configured[F, A](name).map {
           _.fold(
@@ -275,7 +281,7 @@ object Configured {
   ): Configured[F, List[A]] =
     new Configured[F, List[A]] {
       override def value(
-        name: NonEmptyChain[String]
+        name: Environment.Key
       ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, List[A]]] =
         Configured[F, Int](name :+ "COUNT").flatMap {
           _.fold(
@@ -309,7 +315,7 @@ object Configured {
       override def pure[A](a: A): Configured[F, A] =
         new Configured[F, A] {
           override def value(
-            name: NonEmptyChain[String]
+            name: Environment.Key
           ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]] =
             Kleisli(_ => a.validNec[ConfiguredError].pure[F])
         }
@@ -317,7 +323,7 @@ object Configured {
       override def ap[A, B](ff: Configured[F, A => B])(ca: Configured[F, A]): Configured[F, B] =
         new Configured[F, B] {
           override def value(
-            name: NonEmptyChain[String]
+            name: Environment.Key
           ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, B]] =
             Kleisli {
               env =>
