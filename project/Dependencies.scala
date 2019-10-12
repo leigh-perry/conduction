@@ -7,7 +7,7 @@ object Dependencies {
     val cats = "2.0.0"
     val catsEffect = "2.0.0"
 
-    val typesafeConfig = "1.3.4"
+    val typesafeConfig = "1.4.0"
 
     val minitest = "2.7.0"
     val scalacheck = "1.14.2"
