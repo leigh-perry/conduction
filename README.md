@@ -1,5 +1,8 @@
 # Conduction - application configuration through induction
 
+![alt text](https://travis-ci.org/leigh-perry/conduction.svg?branch=master)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.leigh-perry/conduction_2.13.svg)](http://search.maven.org/#search|gav|1|g%3A%22com.github.leigh-perry%22%20AND%20a%3A%22conduction_2.13%22)
+
    * [Contents](#conduction---application-configuration-through-induction)
       * [Naming](#naming)
       * [Supported types](#supported-types)
@@ -12,11 +15,6 @@
       * [Supporting other effects](#supporting-other-effects)
       * [Environment options](#environment-options)
       * [Error reporting](#error-reporting)
-
-![alt text](https://travis-ci.org/leigh-perry/conduction.svg?branch=master)
-
-[![Maven Central](https://img.shields.io/maven-central/v/com.github.leigh-perry/conduction_2.13.svg)](http://search.maven.org/#search|gav|1|g%3A%22com.github.leigh-perry%22%20AND%20a%3A%22conduction_2.13%22)
-
 
 ```scala
 // available for Scala 2.12, 2.13
