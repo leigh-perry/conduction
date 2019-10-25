@@ -13,6 +13,11 @@
       * [Environment options](#environment-options)
       * [Error reporting](#error-reporting)
 
+![alt text](https://travis-ci.org/leigh-perry/conduction.svg?branch=master)
+
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.leigh-perry/conduction_2.13.svg)](http://search.maven.org/#search|gav|1|g%3A%22io.github.leigh-perry%22%20AND%20a%3A%22conduction_2.13%22)
+
+
 ```scala
 // available for Scala 2.12, 2.13
 libraryDependencies += "com.github.leigh-perry" %% "conduction-core" % "0.4.2"
