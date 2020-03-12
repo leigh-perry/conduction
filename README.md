@@ -1,5 +1,10 @@
 # Conduction - application configuration through induction
 
+![alt text](https://travis-ci.org/leigh-perry/conduction.svg?branch=master)
+[![Maven Central](https://img.shields.io/maven-central/v/com.github.leigh-perry/conduction_2.13.svg)](http://search.maven.org/#search|gav|1|g%3A%22com.github.leigh-perry%22%20AND%20a%3A%22conduction_2.13%22)
+[![Powered by cats](https://img.shields.io/badge/powered%20by-cats-blue.svg)](https://github.com/typelevel/cats)
+![Grain free](https://img.shields.io/badge/grain-free-orange.svg)
+
    * [Contents](#conduction---application-configuration-through-induction)
       * [Naming](#naming)
       * [Supported types](#supported-types)
@@ -15,7 +20,7 @@
 
 ```scala
 // available for Scala 2.12, 2.13
-libraryDependencies += "com.github.leigh-perry" %% "conduction-core" % "0.3.4"
+libraryDependencies += "com.github.leigh-perry" %% "conduction-core" % "0.4.2"
 ```
 
 Configuration is via a configuration library that inductively derives the configuration for known
@@ -307,7 +312,7 @@ This means that if configuration errors are present, all errors are reported, ra
 # Release
 
 ```bash
-VERS=0.3.4
+VERS=0.4.2
 git tag -a v${VERS} -m "v${VERS}"
 git push origin v${VERS}
 ```
