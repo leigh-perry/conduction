@@ -7,8 +7,6 @@ object Dependencies {
     val cats = "2.0.0"
     val catsEffect = "2.0.0"
 
-    val typesafeConfig = "1.4.0"
-
     val minitest = "2.7.0"
     val scalacheck = "1.14.3"
   }
@@ -17,8 +15,6 @@ object Dependencies {
   val catsLaws = "org.typelevel" %% "cats-laws" % Version.cats
   val catsFree = "org.typelevel" %% "cats-free" % Version.cats
   val catsEffect = "org.typelevel" %% "cats-effect" % Version.catsEffect
-
-  val typesafeConfig = "com.typesafe" % "config" % Version.typesafeConfig
 
   val minitest = "io.monix" %% "minitest" % Version.minitest
   val minitestLaws = "io.monix" %% "minitest-laws" % Version.minitest

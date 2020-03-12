@@ -47,9 +47,7 @@ lazy val commonSettings =
       ) ++ compilerPlugins
   )
 
-lazy val crossBuiltCommonSettings =
-  commonSettings ++
-    Seq(crossScalaVersions := Seq(Scala_211, Scala_212, Scala_213))
+lazy val crossBuiltCommonSettings = commonSettings ++ Seq(crossScalaVersions := Seq(Scala_211, Scala_212, Scala_213))
 
 lazy val core =
   module("core")
@@ -61,19 +59,7 @@ lazy val core =
         )
     )
 
-lazy val hocon =
-  module("hocon")
-    .settings(
-      libraryDependencies ++=
-        Seq(
-          cats,
-          catsEffect,
-          typesafeConfig
-        )
-    )
-    .dependsOn(core % "compile->compile;test->test")
-
-lazy val allModules = List(core, hocon)
+lazy val allModules = List(core)
 
 lazy val root =
   project
@@ -94,8 +80,7 @@ def module(moduleName: String): Project =
 
 def versionDependentExtraScalacOptions(scalaVersion: String) =
   CrossVersion.partialVersion(scalaVersion) match {
-    case Some((2, minor)) if minor < 13 =>
-      Seq("-Yno-adapted-args", "-Xfuture", "-Ypartial-unification")
+    case Some((2, minor)) if minor < 13 => Seq("-Yno-adapted-args", "-Xfuture", "-Ypartial-unification")
     case _ => Nil
   }
 
