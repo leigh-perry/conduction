@@ -5,7 +5,7 @@
 *.pem
 app.*.log.gz
 *.tfstate*
-_ref
+_temp*
 cassandra_data/
 custom-plugins/
 

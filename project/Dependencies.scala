@@ -7,6 +7,8 @@ object Dependencies {
     val cats = "2.0.0"
     val catsEffect = "2.0.0"
 
+    lazy val magnolia = "0.12.8"
+
     val minitest = "2.8.2"
     val scalacheck = "1.14.3"
   }
@@ -15,6 +17,8 @@ object Dependencies {
   val catsLaws = "org.typelevel" %% "cats-laws" % Version.cats
   val catsFree = "org.typelevel" %% "cats-free" % Version.cats
   val catsEffect = "org.typelevel" %% "cats-effect" % Version.catsEffect
+
+  val magnolia = "com.propensive" %% "magnolia" % Version.magnolia
 
   val minitest = "io.monix" %% "minitest" % Version.minitest
   val minitestLaws = "io.monix" %% "minitest-laws" % Version.minitest

@@ -59,7 +59,19 @@ lazy val core =
         )
     )
 
-lazy val allModules = List(core)
+lazy val `conduction-magnolia` =
+  module("magnolia")
+    .settings(
+      libraryDependencies ++=
+        Seq(
+          cats,
+          catsEffect,
+          magnolia
+        )
+    )
+    .dependsOn(core % "compile->compile;test->test")
+
+lazy val allModules = List(core, `conduction-magnolia`)
 
 lazy val root =
   project
