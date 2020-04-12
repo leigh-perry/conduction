@@ -38,4 +38,7 @@ object ConfigSupportLawsTest extends SimpleTestSuite with Checkers {
   checkAll("Conversion Functor laws") {
     _ => FunctorTests[Conversion].functor[Int, Long, String]
   }
+
+  // TODO applicative laws
+
 }

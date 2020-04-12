@@ -8,8 +8,9 @@ import cats.syntax.either._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
+import com.leighperry.conduction.config.testsupport.EnvGenerators._
 import com.leighperry.conduction.config.testsupport.TestSupport
-import org.scalacheck.{ Arbitrary, Gen, Properties }
+import org.scalacheck.{ Arbitrary, Properties }
 
 object ConfigSupportTest extends Properties("Config support") with TestSupport {
 
@@ -130,25 +131,6 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       .run(map)
       .map(c => c.shouldBe(ConfiguredError.invalidValue(k, v).invalidNec))
   }
-
-  ////
-
-  private def envIO(params: Map[String, String], log: String => IO[Unit] = silencer[IO]): IO[Environment[IO]] =
-    IO(logging[IO](fromMap[IO](params), log))
-
-  private def propertyFileIO(propertiesFilename: String, log: String => IO[Unit] = silencer[IO]): IO[Environment[IO]] =
-    for {
-      fp <- IO(getClass.getClassLoader.getResource(s"$propertiesFilename.properties"))
-      ep <- fromPropertiesFile[IO](fp.getFile)
-      q <- IO(logging[IO](ep, log))
-    } yield q
-
-  private def genEnvIO(
-    params: Map[String, String],
-    propertiesFilename: String,
-    log: String => IO[Unit] = silencer[IO]
-  ): Gen[IO[Environment[IO]]] =
-    Gen.oneOf(Gen.const(envIO(params, log)), Gen.const(propertyFileIO(propertiesFilename, log)))
 
   ////
 
