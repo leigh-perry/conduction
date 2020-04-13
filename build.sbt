@@ -3,6 +3,8 @@ import Dependencies._
 val Scala_213 = "2.13.1"
 val Scala_212 = "2.12.10"
 val Scala_211 = "2.11.12"
+val Scala_111213 = Seq(Scala_211, Scala_212, Scala_213)
+val Scala_1213 = Seq(Scala_212, Scala_213)
 
 ////
 
@@ -47,10 +49,11 @@ lazy val commonSettings =
       ) ++ compilerPlugins
   )
 
-lazy val crossBuiltCommonSettings = commonSettings ++ Seq(crossScalaVersions := Seq(Scala_211, Scala_212, Scala_213))
+lazy val crossBuiltCommonSettings = commonSettings
 
 lazy val core =
   module("core")
+    .settings(crossScalaVersions := Scala_111213)
     .settings(
       libraryDependencies ++=
         Seq(
@@ -61,6 +64,7 @@ lazy val core =
 
 lazy val `conduction-magnolia` =
   module("magnolia")
+    .settings(crossScalaVersions := Scala_1213)
     .settings(
       libraryDependencies ++=
         Seq(
