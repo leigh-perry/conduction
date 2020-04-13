@@ -7,7 +7,7 @@ object Dependencies {
     val cats = "2.0.0"
     val catsEffect = "2.0.0"
 
-    lazy val magnolia = "0.12.8"
+    lazy val magnolia = "0.14.4"
 
     val minitest = "2.8.2"
     val scalacheck = "1.14.3"
