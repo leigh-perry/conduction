@@ -53,7 +53,7 @@ lazy val crossBuiltCommonSettings = commonSettings
 
 lazy val core =
   module("core")
-    .settings(crossScalaVersions := Scala_111213)
+    .settings(crossScalaVersions := Scala_1213) // was Scala_111213
     .settings(
       libraryDependencies ++=
         Seq(
