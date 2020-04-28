@@ -8,6 +8,7 @@ app.*.log.gz
 _temp*
 cassandra_data/
 custom-plugins/
+project/metals.sbt
 
 # Created by .ignore support plugin (hsz.mobi)
 ### JetBrains template

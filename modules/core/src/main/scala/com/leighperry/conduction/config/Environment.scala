@@ -14,7 +14,6 @@ trait Environment[F[_]] {
 }
 
 object Environment {
-  // TODO remove?
   type Key = String
 
   def fromEnvVars[F[_]: Sync]: F[Environment[F]] =

@@ -1,7 +1,7 @@
 package com.leighperry.conduction.config.testsupport
 
 import cats.Eq
-import cats.data.NonEmptyChain
+import cats.data.{ NonEmptyChain, Validated, ValidatedNec }
 import cats.effect.IO
 import cats.syntax.eq._
 import org.scalacheck.Prop.forAll
@@ -39,13 +39,38 @@ final class TestSupportNecOps[A](val actual: NonEmptyChain[A]) {
 
   def shouldBeNec(expected: NonEmptyChain[A]): Boolean =
     expected.length == actual.length &&
-      expected.forall(a => actual.exists(_ == a))
+      expected.forall(a => actual.exists(_ == a)) // TODO tighten
 
 }
 
 trait ToTestSupportNecOps {
   implicit def instanceTestSupport[A](actual: NonEmptyChain[A]): TestSupportNecOps[A] =
     new TestSupportNecOps[A](actual)
+}
+
+////
+
+final class TestSupportValidatedNecOps[E, A](val actual: ValidatedNec[E, A]) {
+
+  def shouldBeValidatedNec(expected: ValidatedNec[E, A]): Boolean =
+    actual match {
+      case Validated.Valid(aa) =>
+        expected match {
+          case Validated.Valid(ea) => aa == ea
+          case Validated.Invalid(ae) => false
+        }
+      case Validated.Invalid(ae) =>
+        expected match {
+          case Validated.Valid(ea) => false
+          case Validated.Invalid(ee) => ae == ee
+        }
+    }
+
+}
+
+trait ToTestSupportValidatedNecOps {
+  implicit def instanceTestSupport[E, A](actual: ValidatedNec[E, A]): TestSupportValidatedNecOps[E, A] =
+    new TestSupportValidatedNecOps[E, A](actual)
 }
 
 ////
@@ -166,6 +191,7 @@ trait TestSupportScalacheck {
 trait TestSupport
   extends ToTestSupportOps
   with ToTestSupportNecOps
+  with ToTestSupportValidatedNecOps
   with ToTestSupportEqOps
   with ToTestSupportIOOps
   with TestSupportGens
