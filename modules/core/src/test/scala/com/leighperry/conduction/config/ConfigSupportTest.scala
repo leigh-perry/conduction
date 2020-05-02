@@ -10,7 +10,7 @@ import cats.syntax.option._
 import cats.syntax.validated._
 import com.leighperry.conduction.config.testsupport.EnvGenerators._
 import com.leighperry.conduction.config.testsupport.TestSupport
-import org.scalacheck.{ Arbitrary, Properties }
+import org.scalacheck.{ Arbitrary, Gen, Properties }
 
 object ConfigSupportTest extends Properties("Config support") with TestSupport {
 
@@ -55,7 +55,9 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         .map {
           c =>
             c.shouldBe(v.some.validNec) &&
-            Configured[IO, Option[String]].description(k).shouldBe(ConfigDescription(ConfigValueInfo(s"${k}_OPT", "string")))
+            Configured[IO, Option[String]]
+              .description(k)
+              .shouldBe(ConfigDescription(ConfigValueInfo(s"${k}_OPT", "string")))
         }
   }
 
@@ -70,7 +72,9 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         .map {
           c =>
             c.shouldBe(v.some.validNec) &&
-            Configured[IO, Option[Int]].description(k).shouldBe(ConfigDescription(ConfigValueInfo(s"${k}_OPT", "integer")))
+            Configured[IO, Option[Int]]
+              .description(k)
+              .shouldBe(ConfigDescription(ConfigValueInfo(s"${k}_OPT", "integer")))
         }
   }
 
@@ -528,7 +532,9 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(List(1000, 1001, 1002).validNec) &&
         Configured[IO, List[Int]]
           .description("INTLIST")
-          .shouldBe(ConfigDescription(ConfigValueInfo("INTLIST_COUNT", "integer"), ConfigValueInfo("INTLIST_n", "integer")))
+          .shouldBe(
+            ConfigDescription(ConfigValueInfo("INTLIST_COUNT", "integer"), ConfigValueInfo("INTLIST_n", "integer"))
+          )
   }
 
   property("Missing Configured[IO, List[Int]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
@@ -642,6 +648,111 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
           .shouldBe(ConfigDescription(ConfigValueInfo("SOMEINT", "integer")))
   }
 
+  // TODO prop files too
+  def hgenEnvIO(
+    params: Map[String, String],
+    propertiesFilename: String,
+    log: String => IO[Unit] = silencer[IO]
+  ): Gen[IO[Environment[IO]]] =
+    Gen.const(envIO(params, log))
+
+  property("Configured description should handle sealed traits") = simpleTest(
+    SomeAdt
+      .descriptor
+      .description("LP1")
+      .shouldBe(
+        ConfigDescription(
+          List(
+            ConfigValueInfo("LP1_SINGLE_EP_HOST", "string"),
+            ConfigValueInfo("LP1_SINGLE_EP_PORT", "integer"),
+            ConfigValueInfo("LP1_SINGLE_EXTRA", "string"),
+            ConfigValueInfo("LP1_DUAL_EPS_EP1_HOST", "string"),
+            ConfigValueInfo("LP1_DUAL_EPS_EP1_PORT", "integer"),
+            ConfigValueInfo("LP1_DUAL_EPS_EP2_HOST", "string"),
+            ConfigValueInfo("LP1_DUAL_EPS_EP2_PORT", "integer"),
+            ConfigValueInfo("LP1_DUAL_EXTRA", "integer"),
+            ConfigValueInfo("LP1_TRIPLE_EPS_EP1_HOST", "string"),
+            ConfigValueInfo("LP1_TRIPLE_EPS_EP1_PORT", "integer"),
+            ConfigValueInfo("LP1_TRIPLE_EPS_EP2_HOST", "string"),
+            ConfigValueInfo("LP1_TRIPLE_EPS_EP2_PORT", "integer"),
+            ConfigValueInfo("LP1_TRIPLE_EPS_EP3_HOST", "string"),
+            ConfigValueInfo("LP1_TRIPLE_EPS_EP3_PORT", "integer"),
+            ConfigValueInfo("LP1_TRIPLE_EXTRA", "string")
+          )
+        )
+      )
+  )
+
+  property("Configured should handle sealed traits – Single") = forAllIO(
+    hgenEnvIO(
+      Map(
+        "LP1_SINGLE_EP_HOST" -> "lp1-host",
+        "LP1_SINGLE_EP_PORT" -> "1",
+        "LP1_SINGLE_EXTRA" -> "singleextra"
+      ),
+      "test01qqqqqqq"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- SomeAdt.descriptor[IO].value("LP1").run(env)
+      } yield c.shouldBe(SomeAdt.Single(Endpoint("lp1-host", 1), "singleextra").validNec)
+  }
+
+  property("Configured should handle sealed traits – Dual") = forAllIO(
+    hgenEnvIO(
+      Map(
+        "LP1_DUAL_EPS_EP1_HOST" -> "multi-ep1-host",
+        "LP1_DUAL_EPS_EP1_PORT" -> "2",
+        "LP1_DUAL_EPS_EP2_HOST" -> "multi-ep2-host",
+        "LP1_DUAL_EPS_EP2_PORT" -> "3",
+        "LP1_DUAL_EXTRA" -> "123"
+      ),
+      "test02qqqqqqsq"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- SomeAdt.descriptor[IO].value("LP1").run(env)
+      } yield c.shouldBe(
+        SomeAdt.Dual(TwoEndpoints(Endpoint("multi-ep1-host", 2), Endpoint("multi-ep2-host", 3)), 123).validNec
+      )
+  }
+
+  property("Configured should handle sealed traits - Triple") = forAllIO(
+    hgenEnvIO(
+      Map(
+        "LP1_TRIPLE_EPS_EP1_HOST" -> "multi-ep1-host",
+        "LP1_TRIPLE_EPS_EP1_PORT" -> "2",
+        "LP1_TRIPLE_EPS_EP2_HOST" -> "multi-ep2-host",
+        "LP1_TRIPLE_EPS_EP2_PORT" -> "3",
+        "LP1_TRIPLE_EPS_EP3_HOST" -> "multi-ep3-host",
+        "LP1_TRIPLE_EPS_EP3_PORT" -> "4",
+        "LP1_TRIPLE_EXTRA" -> "singleextra"
+      ),
+      "test03qqqqqqq"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- SomeAdt.descriptor[IO].value("LP1").run(env)
+      } yield c.shouldBe(
+        SomeAdt
+          .Triple(
+            ThreeEndpoints(
+              Endpoint("multi-ep1-host", 2),
+              Endpoint("multi-ep2-host", 3),
+              Endpoint("multi-ep3-host", 4)
+            ),
+            "singleextra"
+          )
+          .validNec
+      )
+  }
+
   ////
 
   final case class Endpoint(host: String, port: Int)
@@ -675,6 +786,43 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[F, Endpoint].withSuffix("EP2"),
         Configured[F, Endpoint].withSuffix("EP3")
       ).mapN(ThreeEndpoints.apply)
+  }
+
+  ////
+
+  sealed trait SomeAdt
+  object SomeAdt {
+    final case class Single(ep: Endpoint, extra: String) extends SomeAdt
+    object Single {
+      def configuredInstance[F[_]](implicit F: Monad[F]): Configured[F, SomeAdt] =
+        (
+          Configured[F, Endpoint].withSuffix("EP"),
+          Configured[F, String].withSuffix("EXTRA")
+        ).mapN(Single.apply)
+    }
+
+    final case class Dual(eps: TwoEndpoints, extra: Int) extends SomeAdt
+    object Dual {
+      def configuredInstance[F[_]](implicit F: Monad[F]): Configured[F, SomeAdt] =
+        (
+          Configured[F, TwoEndpoints].withSuffix("EPS"),
+          Configured[F, Int].withSuffix("EXTRA")
+        ).mapN(Dual.apply)
+    }
+
+    final case class Triple(eps: ThreeEndpoints, extra: String) extends SomeAdt
+    object Triple {
+      def configuredInstance[F[_]](implicit F: Monad[F]): Configured[F, SomeAdt] =
+        (
+          Configured[F, ThreeEndpoints].withSuffix("EPS"),
+          Configured[F, String].withSuffix("EXTRA")
+        ).mapN(Triple.apply)
+    }
+
+    implicit def descriptor[F[_]: Monad]: Configured[F, SomeAdt] =
+      Single.configuredInstance[F].withSuffix("SINGLE") |
+        Dual.configuredInstance[F].withSuffix("DUAL") |
+        Triple.configuredInstance[F].withSuffix("TRIPLE")
   }
 
 }

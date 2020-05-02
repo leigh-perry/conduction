@@ -230,4 +230,31 @@ object Configured {
   ): Configured[F, Either[A, B]] =
     A or B
 
+  ////
+
+  implicit class SealedTraitOps[F[_], ST, A <: ST](ca: Configured[F, A]) {
+    def orAdt[B <: ST](cb: Configured[F, B])(implicit F: Monad[F]): Configured[F, ST] =
+      new Configured[F, ST] {
+        override def value(name: Environment.Key): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, ST]] =
+          ca.value(name).flatMap {
+            _.fold(
+              errors1 =>
+                cb.value(name).map {
+                  _.fold(
+                    errors2 => (errors1 ++ errors2).invalid[ST],
+                    b => b.valid
+                  )
+                },
+              a => Kleisli(_ => (a: ST).validNec[ConfiguredError].pure[F])
+            )
+          }
+
+        override def description(name: Key): ConfigDescription =
+          ConfigDescription(ca.description(name).values ++ cb.description(name).values)
+      }
+
+    def |[B <: ST](cb: Configured[F, B])(implicit F: Monad[F]): Configured[F, ST] =
+      orAdt(cb)
+  }
+
 }
