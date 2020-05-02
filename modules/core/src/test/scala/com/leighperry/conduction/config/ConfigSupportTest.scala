@@ -48,20 +48,30 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     kv =>
       val k = kv.key
       val v = kv.v
-      val map = fromMap[IO](Map(s"${k}_OPT" -> v))
+      val entries = Map(s"${k}_OPT" -> v)
+      val map = fromMap[IO](entries)
       Configured[IO, Option[String]](k)
         .run(map)
-        .map(c => c.shouldBe(v.some.validNec))
+        .map {
+          c =>
+            c.shouldBe(v.some.validNec) &&
+            Configured[IO, Option[String]].description(k).shouldBe(entries.keys.toList)
+        }
   }
 
   property("Present Option[Int] values") = forAllIO(genKV[Int]) {
     kv =>
       val k = kv.key
       val v = kv.v
-      val map = fromMap[IO](Map(s"${k}_OPT" -> v.toString))
+      val entries = Map(s"${k}_OPT" -> v.toString)
+      val map = fromMap[IO](entries)
       Configured[IO, Option[Int]](k)
         .run(map)
-        .map(c => c.shouldBe(v.some.validNec))
+        .map {
+          c =>
+            c.shouldBe(v.some.validNec) &&
+            Configured[IO, Option[Int]].description(k).shouldBe(entries.keys.toList)
+        }
   }
 
   property("Missing Option[String] values") = forAllIO(genKV[String]) {
@@ -108,10 +118,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
   property("Present valid Double") = simpleTestIO {
     val k = "A_DOUBLE"
     val v = "1.23"
-    val map = fromMap[IO](Map(k -> v))
-    for {
-      c <- Configured[IO, Double]("A_DOUBLE").run(map)
-    } yield c.shouldBe(1.23.validNec)
+    val entries = Map(k -> v)
+    val map = fromMap[IO](entries)
+    Configured[IO, Double]("A_DOUBLE").run(map).map {
+      c =>
+        c.shouldBe(1.23.validNec) &&
+        Configured[IO, Double].description(k).shouldBe(entries.keys.toList)
+    }
   }
 
   property("Missing valid Double") = simpleTestIO {
@@ -147,7 +160,8 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, Endpoint]("LP1").run(env)
-      } yield c.shouldBe(Endpoint("lp1-host", 1).validNec)
+      } yield c.shouldBe(Endpoint("lp1-host", 1).validNec) &&
+        Configured[IO, Endpoint].description("LP1").shouldBe(List("LP1_HOST", "LP1_PORT"))
   }
 
   property("Present valid Configured[IO, TwoEndpoints]") = forAllIO(
@@ -165,9 +179,11 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, TwoEndpoints]("MULTI").run(env)
-      } yield c.shouldBe(
-        TwoEndpoints(Endpoint("multi-ep1-host", 2), Endpoint("multi-ep2-host", 3)).validNec
-      )
+      } yield c.shouldBe(TwoEndpoints(Endpoint("multi-ep1-host", 2), Endpoint("multi-ep2-host", 3)).validNec) &&
+        Configured[IO, TwoEndpoints]
+          .description("MULTI")
+          .shouldBe(List("MULTI_EP1_HOST", "MULTI_EP1_PORT", "MULTI_EP2_HOST", "MULTI_EP2_PORT"))
+
   }
 
   property("Present valid Configured[IO, ThreeEndpoints]") = forAllIO(
@@ -193,7 +209,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
           Endpoint("multi-ep2-host", 3),
           Endpoint("multi-ep3-host", 4)
         ).validNec
-      )
+      ) &&
+        Configured[IO, ThreeEndpoints]
+          .description("MULTI")
+          .shouldBe(
+            List(
+              "MULTI_EP1_HOST",
+              "MULTI_EP1_PORT",
+              "MULTI_EP2_HOST",
+              "MULTI_EP2_PORT",
+              "MULTI_EP3_HOST",
+              "MULTI_EP3_PORT"
+            )
+          )
   }
 
   property("Present valid Configured[IO, Either[Endpoint, Endpoint]]") = forAllIO(
@@ -209,7 +237,10 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, Either[Endpoint, Endpoint]]("CHOICE").run(env)
-      } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid)
+      } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid) &&
+        Configured[IO, Either[Endpoint, Endpoint]]
+          .description("CHOICE")
+          .shouldBe(List("CHOICE_C1_HOST", "CHOICE_C1_PORT", "CHOICE_C2_HOST", "CHOICE_C2_PORT"))
   }
 
   property("Present valid Configured[IO, Either[Endpoint, Endpoint]] via `or` syntax") = forAllIO(
@@ -225,7 +256,11 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, Endpoint].or(Configured[IO, Endpoint]).value("CHOICE").run(env)
-      } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid)
+      } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid) &&
+        Configured[IO, Endpoint]
+          .or(Configured[IO, Endpoint])
+          .description("CHOICE")
+          .shouldBe(List("CHOICE_C1_HOST", "CHOICE_C1_PORT", "CHOICE_C2_HOST", "CHOICE_C2_PORT"))
   }
 
   property("Missing Configured[IO, Either[Endpoint, Endpoint]]") = forAllIO(
@@ -248,11 +283,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     genEnvIO(
       Map(
         "CHOICE_C1_C1_HOST" -> "choice-c1-c1-host",
-        "CHOICE_C1_C1_PORT" -> "7",
-        "CHOICE_C1_C2_HOST" -> "choice-c1-c2-host",
-        "CHOICE_C1_C2_PORT" -> "8",
-        "CHOICE_C2_HOST" -> "choice2-c2-host",
-        "CHOICE_C2_PORT" -> "5"
+        "CHOICE_C1_C1_PORT" -> "7"
       ),
       "test07"
     )
@@ -261,7 +292,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]("CHOICE").run(env)
-      } yield c.shouldBe(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
+      } yield c.shouldBe(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec) &&
+        Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]
+          .description("CHOICE")
+          .shouldBe(
+            List(
+              "CHOICE_C1_C1_HOST",
+              "CHOICE_C1_C1_PORT",
+              "CHOICE_C1_C2_HOST",
+              "CHOICE_C1_C2_PORT",
+              "CHOICE_C2_HOST",
+              "CHOICE_C2_PORT"
+            )
+          )
   }
 
   property(
@@ -270,11 +313,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     genEnvIO(
       Map(
         "CHOICE_C1_C1_HOST" -> "choice-c1-c1-host",
-        "CHOICE_C1_C1_PORT" -> "7",
-        "CHOICE_C1_C2_HOST" -> "choice-c1-c2-host",
-        "CHOICE_C1_C2_PORT" -> "8",
-        "CHOICE_C2_HOST" -> "choice2-c2-host",
-        "CHOICE_C2_PORT" -> "5"
+        "CHOICE_C1_C1_PORT" -> "7"
       ),
       "test08"
     )
@@ -291,7 +330,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
             .value("CHOICE")
             .run(env)
         }
-      } yield c.shouldBe(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
+      } yield c.shouldBe(Endpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec) &&
+        Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]
+          .description("CHOICE")
+          .shouldBe(
+            List(
+              "CHOICE_C1_C1_HOST",
+              "CHOICE_C1_C1_PORT",
+              "CHOICE_C1_C2_HOST",
+              "CHOICE_C1_C2_PORT",
+              "CHOICE_C2_HOST",
+              "CHOICE_C2_PORT"
+            )
+          )
   }
 
   property(
@@ -319,7 +370,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
             .value("CHOICE")
             .run(env)
         }
-      } yield c.shouldBe(Endpoint("choice-c1-c2-host", 8).asRight.asLeft.validNec)
+      } yield c.shouldBe(Endpoint("choice-c1-c2-host", 8).asRight.asLeft.validNec) &&
+        Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]
+          .description("CHOICE")
+          .shouldBe(
+            List(
+              "CHOICE_C1_C1_HOST",
+              "CHOICE_C1_C1_PORT",
+              "CHOICE_C1_C2_HOST",
+              "CHOICE_C1_C2_PORT",
+              "CHOICE_C2_HOST",
+              "CHOICE_C2_PORT"
+            )
+          )
   }
 
   property("Present valid Configured[IO, Either[Either[,]], Endpoint] right via `or` syntax") = forAllIO(
@@ -341,7 +404,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
             .value("CHOICE")
             .run(env)
         }
-      } yield c.shouldBe(Endpoint("choice2-c2-host", 5).asRight.validNec)
+      } yield c.shouldBe(Endpoint("choice2-c2-host", 5).asRight.validNec) &&
+        Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]
+          .description("CHOICE")
+          .shouldBe(
+            List(
+              "CHOICE_C1_C1_HOST",
+              "CHOICE_C1_C1_PORT",
+              "CHOICE_C1_C2_HOST",
+              "CHOICE_C1_C2_PORT",
+              "CHOICE_C2_HOST",
+              "CHOICE_C2_PORT"
+            )
+          )
   }
 
   private val separator = "_"
@@ -387,7 +462,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         env <- e
         c <- Configured[IO, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]("CHOICE")
           .run(env)
-      } yield c.shouldBe(Endpoint("choice-opt-c2-c1-host", 9).asLeft.asRight.some.valid)
+      } yield c.shouldBe(Endpoint("choice-opt-c2-c1-host", 9).asLeft.asRight.some.valid) &&
+        Configured[IO, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]
+          .description("CHOICE")
+          .shouldBe(
+            List(
+              "CHOICE_OPT_C1_HOST",
+              "CHOICE_OPT_C1_PORT",
+              "CHOICE_OPT_C2_C1_HOST",
+              "CHOICE_OPT_C2_C1_PORT",
+              "CHOICE_OPT_C2_C2_HOST",
+              "CHOICE_OPT_C2_C2_PORT"
+            )
+          )
   }
 
   property("Missing Configured[IO, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]") =
@@ -415,7 +502,10 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, List[Int]]("INTLIST").run(env)
-      } yield c.shouldBe(List(1000, 1001, 1002).validNec)
+      } yield c.shouldBe(List(1000, 1001, 1002).validNec) &&
+        Configured[IO, List[Int]]
+          .description("INTLIST")
+          .shouldBe(List("INTLIST_COUNT", "INTLIST_n"))
   }
 
   property("Missing Configured[IO, List[Int]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
@@ -442,7 +532,10 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, List[Endpoint]]("EPLIST").run(env)
-      } yield c.shouldBe(List(Endpoint("eplist0-host", 2), Endpoint("eplist1-host", 3)).validNec)
+      } yield c.shouldBe(List(Endpoint("eplist0-host", 2), Endpoint("eplist1-host", 3)).validNec) &&
+        Configured[IO, List[Endpoint]]
+          .description("EPLIST")
+          .shouldBe(List("EPLIST_COUNT", "EPLIST_n_HOST", "EPLIST_n_PORT"))
   }
 
   property("Missing Configured[IO, List[Endpoint]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
@@ -479,7 +572,19 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
           TwoEndpoints(Endpoint("teplist0-ep1-host", 7), Endpoint("multilist-ep1-host0", 7)),
           TwoEndpoints(Endpoint("teplist1-ep1-host", 7), Endpoint("multilist-ep2-host1", 7))
         ).validNec
-      )
+      ) &&
+        Configured[IO, List[TwoEndpoints]]
+          .description("TEPLIST")
+          .shouldBe(
+            List(
+              "TEPLIST_COUNT",
+              "TEPLIST_n_EP1_HOST",
+              "TEPLIST_n_EP1_PORT",
+              "TEPLIST_n_EP2_HOST",
+              "TEPLIST_n_EP2_PORT"
+            )
+          )
+
   }
 
   property("Missing Configured[IO, List[TwoEndpoints]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
@@ -502,7 +607,10 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       for {
         env <- e
         c <- Configured[IO, Int].map(i => s"int[$i]").value("SOMEINT").run(env)
-      } yield c.shouldBe("int[567]".validNec)
+      } yield c.shouldBe("int[567]".validNec) &&
+        Configured[IO, Int]
+          .description("SOMEINT")
+          .shouldBe(List("SOMEINT"))
   }
 
   ////

@@ -1,14 +1,14 @@
 package com.leighperry.conduction.config.magnolia
 
-import cats.data.{ Kleisli, ValidatedNec }
+import cats.data.{Kleisli, ValidatedNec}
 import cats.effect.IO
 import cats.instances.list._
 import cats.syntax.functor._
 import cats.syntax.traverse._
-import cats.{ Applicative, Functor, Monad }
+import cats.{Applicative, Functor, Monad}
 import com.leighperry.conduction.config.Environment.Key
-import com.leighperry.conduction.config.{ Configured, ConfiguredError, Conversion, Environment }
-import magnolia.{ CaseClass, Magnolia, Param, SealedTrait }
+import com.leighperry.conduction.config.{Configured, ConfiguredError, Conversion, Environment}
+import magnolia.{CaseClass, Magnolia, Param, SealedTrait}
 
 import scala.language.experimental.macros
 
@@ -75,8 +75,10 @@ private[magnolia] abstract class MagnoliaConfigSupport[F[_]: Applicative] {
   def dispatch[T](sealedTrait: SealedTrait[Typeclass, T]): Typeclass[T] =
     new Configured[F, T] {
       override def value(name: Key): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, T]] =
-        sys.error("Sum types are not supported")
+        sys.error("Sum types are not supported")  // TODO support sealed traits
 
+      override def description(name: Key): List[String] =
+        sys.error("Sum types are not supported")
     }
 
   implicit def gen[T]: Typeclass[T] = macro Magnolia.gen[T]
