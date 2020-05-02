@@ -55,7 +55,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         .map {
           c =>
             c.shouldBe(v.some.validNec) &&
-            Configured[IO, Option[String]].description(k).shouldBe(entries.keys.toList)
+            Configured[IO, Option[String]].description(k).shouldBe(ConfigDescription(ConfigValueInfo(s"${k}_OPT", "string")))
         }
   }
 
@@ -70,7 +70,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         .map {
           c =>
             c.shouldBe(v.some.validNec) &&
-            Configured[IO, Option[Int]].description(k).shouldBe(entries.keys.toList)
+            Configured[IO, Option[Int]].description(k).shouldBe(ConfigDescription(ConfigValueInfo(s"${k}_OPT", "integer")))
         }
   }
 
@@ -123,7 +123,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     Configured[IO, Double]("A_DOUBLE").run(map).map {
       c =>
         c.shouldBe(1.23.validNec) &&
-        Configured[IO, Double].description(k).shouldBe(entries.keys.toList)
+        Configured[IO, Double].description(k).shouldBe(ConfigDescription(ConfigValueInfo(s"${k}", "double")))
     }
   }
 
@@ -161,7 +161,9 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         env <- e
         c <- Configured[IO, Endpoint]("LP1").run(env)
       } yield c.shouldBe(Endpoint("lp1-host", 1).validNec) &&
-        Configured[IO, Endpoint].description("LP1").shouldBe(List("LP1_HOST", "LP1_PORT"))
+        Configured[IO, Endpoint]
+          .description("LP1")
+          .shouldBe(ConfigDescription(ConfigValueInfo("LP1_HOST", "string"), ConfigValueInfo("LP1_PORT", "integer")))
   }
 
   property("Present valid Configured[IO, TwoEndpoints]") = forAllIO(
@@ -182,7 +184,14 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(TwoEndpoints(Endpoint("multi-ep1-host", 2), Endpoint("multi-ep2-host", 3)).validNec) &&
         Configured[IO, TwoEndpoints]
           .description("MULTI")
-          .shouldBe(List("MULTI_EP1_HOST", "MULTI_EP1_PORT", "MULTI_EP2_HOST", "MULTI_EP2_PORT"))
+          .shouldBe(
+            ConfigDescription(
+              ConfigValueInfo("MULTI_EP1_HOST", "string"),
+              ConfigValueInfo("MULTI_EP1_PORT", "integer"),
+              ConfigValueInfo("MULTI_EP2_HOST", "string"),
+              ConfigValueInfo("MULTI_EP2_PORT", "integer")
+            )
+          )
 
   }
 
@@ -213,13 +222,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[IO, ThreeEndpoints]
           .description("MULTI")
           .shouldBe(
-            List(
-              "MULTI_EP1_HOST",
-              "MULTI_EP1_PORT",
-              "MULTI_EP2_HOST",
-              "MULTI_EP2_PORT",
-              "MULTI_EP3_HOST",
-              "MULTI_EP3_PORT"
+            ConfigDescription(
+              ConfigValueInfo("MULTI_EP1_HOST", "string"),
+              ConfigValueInfo("MULTI_EP1_PORT", "integer"),
+              ConfigValueInfo("MULTI_EP2_HOST", "string"),
+              ConfigValueInfo("MULTI_EP2_PORT", "integer"),
+              ConfigValueInfo("MULTI_EP3_HOST", "string"),
+              ConfigValueInfo("MULTI_EP3_PORT", "integer")
             )
           )
   }
@@ -240,7 +249,14 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(Endpoint("choice-c1-host", 5).asLeft.valid) &&
         Configured[IO, Either[Endpoint, Endpoint]]
           .description("CHOICE")
-          .shouldBe(List("CHOICE_C1_HOST", "CHOICE_C1_PORT", "CHOICE_C2_HOST", "CHOICE_C2_PORT"))
+          .shouldBe(
+            ConfigDescription(
+              ConfigValueInfo("CHOICE_C1_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C2_PORT", "integer")
+            )
+          )
   }
 
   property("Present valid Configured[IO, Either[Endpoint, Endpoint]] via `or` syntax") = forAllIO(
@@ -260,7 +276,14 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[IO, Endpoint]
           .or(Configured[IO, Endpoint])
           .description("CHOICE")
-          .shouldBe(List("CHOICE_C1_HOST", "CHOICE_C1_PORT", "CHOICE_C2_HOST", "CHOICE_C2_PORT"))
+          .shouldBe(
+            ConfigDescription(
+              ConfigValueInfo("CHOICE_C1_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C2_PORT", "integer")
+            )
+          )
   }
 
   property("Missing Configured[IO, Either[Endpoint, Endpoint]]") = forAllIO(
@@ -296,13 +319,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]
           .description("CHOICE")
           .shouldBe(
-            List(
-              "CHOICE_C1_C1_HOST",
-              "CHOICE_C1_C1_PORT",
-              "CHOICE_C1_C2_HOST",
-              "CHOICE_C1_C2_PORT",
-              "CHOICE_C2_HOST",
-              "CHOICE_C2_PORT"
+            ConfigDescription(
+              ConfigValueInfo("CHOICE_C1_C1_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_C1_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C1_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_C2_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C2_PORT", "integer")
             )
           )
   }
@@ -334,13 +357,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]
           .description("CHOICE")
           .shouldBe(
-            List(
-              "CHOICE_C1_C1_HOST",
-              "CHOICE_C1_C1_PORT",
-              "CHOICE_C1_C2_HOST",
-              "CHOICE_C1_C2_PORT",
-              "CHOICE_C2_HOST",
-              "CHOICE_C2_PORT"
+            ConfigDescription(
+              ConfigValueInfo("CHOICE_C1_C1_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_C1_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C1_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_C2_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C2_PORT", "integer")
             )
           )
   }
@@ -374,13 +397,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]
           .description("CHOICE")
           .shouldBe(
-            List(
-              "CHOICE_C1_C1_HOST",
-              "CHOICE_C1_C1_PORT",
-              "CHOICE_C1_C2_HOST",
-              "CHOICE_C1_C2_PORT",
-              "CHOICE_C2_HOST",
-              "CHOICE_C2_PORT"
+            ConfigDescription(
+              ConfigValueInfo("CHOICE_C1_C1_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_C1_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C1_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_C2_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C2_PORT", "integer")
             )
           )
   }
@@ -408,13 +431,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[IO, Either[Either[Endpoint, Endpoint], Endpoint]]
           .description("CHOICE")
           .shouldBe(
-            List(
-              "CHOICE_C1_C1_HOST",
-              "CHOICE_C1_C1_PORT",
-              "CHOICE_C1_C2_HOST",
-              "CHOICE_C1_C2_PORT",
-              "CHOICE_C2_HOST",
-              "CHOICE_C2_PORT"
+            ConfigDescription(
+              ConfigValueInfo("CHOICE_C1_C1_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_C1_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C1_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C1_C2_PORT", "integer"),
+              ConfigValueInfo("CHOICE_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_C2_PORT", "integer")
             )
           )
   }
@@ -466,13 +489,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[IO, Option[Either[Endpoint, Either[Endpoint, Endpoint]]]]
           .description("CHOICE")
           .shouldBe(
-            List(
-              "CHOICE_OPT_C1_HOST",
-              "CHOICE_OPT_C1_PORT",
-              "CHOICE_OPT_C2_C1_HOST",
-              "CHOICE_OPT_C2_C1_PORT",
-              "CHOICE_OPT_C2_C2_HOST",
-              "CHOICE_OPT_C2_C2_PORT"
+            ConfigDescription(
+              ConfigValueInfo("CHOICE_OPT_C1_HOST", "string"),
+              ConfigValueInfo("CHOICE_OPT_C1_PORT", "integer"),
+              ConfigValueInfo("CHOICE_OPT_C2_C1_HOST", "string"),
+              ConfigValueInfo("CHOICE_OPT_C2_C1_PORT", "integer"),
+              ConfigValueInfo("CHOICE_OPT_C2_C2_HOST", "string"),
+              ConfigValueInfo("CHOICE_OPT_C2_C2_PORT", "integer")
             )
           )
   }
@@ -505,7 +528,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(List(1000, 1001, 1002).validNec) &&
         Configured[IO, List[Int]]
           .description("INTLIST")
-          .shouldBe(List("INTLIST_COUNT", "INTLIST_n"))
+          .shouldBe(ConfigDescription(ConfigValueInfo("INTLIST_COUNT", "integer"), ConfigValueInfo("INTLIST_n", "integer")))
   }
 
   property("Missing Configured[IO, List[Int]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
@@ -535,7 +558,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe(List(Endpoint("eplist0-host", 2), Endpoint("eplist1-host", 3)).validNec) &&
         Configured[IO, List[Endpoint]]
           .description("EPLIST")
-          .shouldBe(List("EPLIST_COUNT", "EPLIST_n_HOST", "EPLIST_n_PORT"))
+          .shouldBe(
+            ConfigDescription(
+              ConfigValueInfo("EPLIST_COUNT", "integer"),
+              ConfigValueInfo("EPLIST_n_HOST", "string"),
+              ConfigValueInfo("EPLIST_n_PORT", "integer")
+            )
+          )
   }
 
   property("Missing Configured[IO, List[Endpoint]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
@@ -576,12 +605,12 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         Configured[IO, List[TwoEndpoints]]
           .description("TEPLIST")
           .shouldBe(
-            List(
-              "TEPLIST_COUNT",
-              "TEPLIST_n_EP1_HOST",
-              "TEPLIST_n_EP1_PORT",
-              "TEPLIST_n_EP2_HOST",
-              "TEPLIST_n_EP2_PORT"
+            ConfigDescription(
+              ConfigValueInfo("TEPLIST_COUNT", "integer"),
+              ConfigValueInfo("TEPLIST_n_EP1_HOST", "string"),
+              ConfigValueInfo("TEPLIST_n_EP1_PORT", "integer"),
+              ConfigValueInfo("TEPLIST_n_EP2_HOST", "string"),
+              ConfigValueInfo("TEPLIST_n_EP2_PORT", "integer")
             )
           )
 
@@ -610,7 +639,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
       } yield c.shouldBe("int[567]".validNec) &&
         Configured[IO, Int]
           .description("SOMEINT")
-          .shouldBe(List("SOMEINT"))
+          .shouldBe(ConfigDescription(ConfigValueInfo("SOMEINT", "integer")))
   }
 
   ////

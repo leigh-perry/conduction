@@ -7,7 +7,7 @@ import cats.syntax.functor._
 import cats.syntax.traverse._
 import cats.{Applicative, Functor, Monad}
 import com.leighperry.conduction.config.Environment.Key
-import com.leighperry.conduction.config.{Configured, ConfiguredError, Conversion, Environment}
+import com.leighperry.conduction.config.{ConfigDescription, ConfigValueInfo, Configured, ConfiguredError, Conversion, Environment}
 import magnolia.{CaseClass, Magnolia, Param, SealedTrait}
 
 import scala.language.experimental.macros
@@ -77,7 +77,7 @@ private[magnolia] abstract class MagnoliaConfigSupport[F[_]: Applicative] {
       override def value(name: Key): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, T]] =
         sys.error("Sum types are not supported")  // TODO support sealed traits
 
-      override def description(name: Key): List[String] =
+      override def description(name: Key): ConfigDescription =
         sys.error("Sum types are not supported")
     }
 

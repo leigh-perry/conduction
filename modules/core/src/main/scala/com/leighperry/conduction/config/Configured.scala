@@ -14,6 +14,22 @@ import cats.syntax.validated._
 import cats.{ Applicative, Functor, Monad }
 import com.leighperry.conduction.config.Environment.Key
 
+final case class ConfigValueInfo(name: String, valueType: String)
+
+final case class ConfigDescription(values: List[ConfigValueInfo]) extends AnyVal {
+  def prettyPrint(separator: String): String =
+    values
+      .map(v => s"${v.name}: ${v.valueType}")
+      .mkString(separator)
+}
+
+object ConfigDescription {
+  def apply(values: ConfigValueInfo*): ConfigDescription =
+    ConfigDescription(values.toList)
+}
+
+////
+
 trait Configured[F[_], A] {
   self =>
 
@@ -21,7 +37,7 @@ trait Configured[F[_], A] {
     name: Environment.Key
   ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]]
 
-  def description(name: Environment.Key): List[String]
+  def description(name: Environment.Key): ConfigDescription
 
   ////
 
@@ -32,28 +48,27 @@ trait Configured[F[_], A] {
       ): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]] =
         self.value(name = suffixed(name))
 
-      override def description(name: Environment.Key): List[String] =
+      override def description(name: Environment.Key): ConfigDescription =
         self.description(name = suffixed(name))
 
       private def suffixed(name: Key) =
         s"${name}_$suffix"
     }
 
-  /**
-   * Support sequential use of `Configured` (monadic-style), which is otherwise applicative.
-   * Not called `flatMap` to eschew the use in for-comprehensions.
-   */
   def andThen[B](
     f: A => ValidatedNec[ConfiguredError, B]
-  )(implicit F: Functor[F], B: Configured[F, B]): Configured[F, B] =
+  )(
+    implicit F: Functor[F],
+    B: Configured[F, B]
+  ): Configured[F, B] =
     new Configured[F, B] {
       override def value(name: Environment.Key): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, B]] =
         self
           .value(name)
           .mapF(_.map(_.andThen(f)))
 
-      override def description(name: Key): List[String] =
-        self.description(name) ++ B.description(name)
+      override def description(name: Key): ConfigDescription =
+        ConfigDescription(self.description(name).values ++ B.description(name).values)
     }
 
   def or[B](cb: Configured[F, B])(implicit F: Monad[F]): Configured[F, Either[A, B]] =
@@ -74,8 +89,8 @@ trait Configured[F[_], A] {
           )
         }
 
-      override def description(name: Key): List[String] =
-        self.description(leftName(name)) ++ cb.description(rightName(name))
+      override def description(name: Key): ConfigDescription =
+        ConfigDescription(self.description(leftName(name)).values ++ cb.description(rightName(name)).values)
 
       private def leftName(name: Key) =
         s"${name}_C1"
@@ -107,8 +122,8 @@ object Configured {
           override def value(name: Environment.Key): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]] =
             Kleisli(_ => a.validNec[ConfiguredError].pure[F])
 
-          override def description(name: Key): List[String] =
-            Nil
+          override def description(name: Key): ConfigDescription =
+            ConfigDescription()
         }
 
       override def ap[A, B](ff: Configured[F, A => B])(ca: Configured[F, A]): Configured[F, B] =
@@ -125,8 +140,8 @@ object Configured {
                   }
             }
 
-          override def description(name: Key): List[String] =
-            ff.description(name) ++ ca.description(name)
+          override def description(name: Key): ConfigDescription =
+            ConfigDescription(ff.description(name).values ++ ca.description(name).values)
         }
     }
 
@@ -150,8 +165,8 @@ object Configured {
             } yield c
         }
 
-      override def description(name: Key): List[String] =
-        List(name)
+      override def description(name: Key): ConfigDescription =
+        ConfigDescription(ConfigValueInfo(name, Conversion[A].description))
     }
 
   implicit def configuredOption[F[_], A](
@@ -169,7 +184,7 @@ object Configured {
           )
         }
 
-      override def description(name: Key): List[String] =
+      override def description(name: Key): ConfigDescription =
         A.description(name = optionName(name))
 
       private def optionName(name: Key) =
@@ -195,8 +210,11 @@ object Configured {
           )
         }
 
-      override def description(name: Key): List[String] =
-        countName(name) :: A.description(name = indexName(name, "n"))
+      override def description(name: Key): ConfigDescription =
+        ConfigDescription(
+          ConfigValueInfo(countName(name), Conversion[Int].description) ::
+            A.description(name = indexName(name, "n")).values
+        )
 
       private def countName(name: Key) =
         name + "_COUNT"
