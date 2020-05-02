@@ -648,14 +648,6 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
           .shouldBe(ConfigDescription(ConfigValueInfo("SOMEINT", "integer")))
   }
 
-  // TODO prop files too
-  def hgenEnvIO(
-    params: Map[String, String],
-    propertiesFilename: String,
-    log: String => IO[Unit] = silencer[IO]
-  ): Gen[IO[Environment[IO]]] =
-    Gen.const(envIO(params, log))
-
   property("Configured description should handle sealed traits") = simpleTest(
     SomeAdt
       .descriptor
@@ -684,13 +676,13 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
   )
 
   property("Configured should handle sealed traits – Single") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "LP1_SINGLE_EP_HOST" -> "lp1-host",
         "LP1_SINGLE_EP_PORT" -> "1",
         "LP1_SINGLE_EXTRA" -> "singleextra"
       ),
-      "test01qqqqqqq"
+      "test16"
     )
   ) {
     e =>
@@ -701,7 +693,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
   }
 
   property("Configured should handle sealed traits – Dual") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "LP1_DUAL_EPS_EP1_HOST" -> "multi-ep1-host",
         "LP1_DUAL_EPS_EP1_PORT" -> "2",
@@ -709,7 +701,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "LP1_DUAL_EPS_EP2_PORT" -> "3",
         "LP1_DUAL_EXTRA" -> "123"
       ),
-      "test02qqqqqqsq"
+      "test17"
     )
   ) {
     e =>
@@ -722,7 +714,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
   }
 
   property("Configured should handle sealed traits - Triple") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "LP1_TRIPLE_EPS_EP1_HOST" -> "multi-ep1-host",
         "LP1_TRIPLE_EPS_EP1_PORT" -> "2",
@@ -732,7 +724,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         "LP1_TRIPLE_EPS_EP3_PORT" -> "4",
         "LP1_TRIPLE_EXTRA" -> "singleextra"
       ),
-      "test03qqqqqqq"
+      "test18"
     )
   ) {
     e =>
