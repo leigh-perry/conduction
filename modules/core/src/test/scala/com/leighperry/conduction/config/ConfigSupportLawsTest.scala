@@ -4,11 +4,11 @@ import cats.instances.int._
 import cats.instances.string._
 import cats.laws.discipline.FunctorTests
 import cats.syntax.either._
-import cats.{Eq, Id}
+import cats.{ Eq, Id }
 import com.leighperry.conduction.config.testsupport.TestSupport
 import minitest.SimpleTestSuite
 import minitest.laws.Checkers
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.{ Arbitrary, Gen }
 import org.typelevel.discipline.Laws
 
 object ConfigSupportLawsTest extends SimpleTestSuite with Checkers with TestSupport {

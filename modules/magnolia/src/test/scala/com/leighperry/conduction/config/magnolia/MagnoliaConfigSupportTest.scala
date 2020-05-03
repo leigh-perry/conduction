@@ -1,17 +1,17 @@
 package com.leighperry.conduction.config.magnolia
 
-import cats.data.{NonEmptyChain, Validated}
+import cats.data.{ NonEmptyChain, Validated }
 import cats.effect.IO
 import cats.syntax.either._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
-import com.leighperry.conduction.config.Environment.{Key, fromMap}
+import com.leighperry.conduction.config.Environment.{ fromMap, Key }
 import com.leighperry.conduction.config.magnolia.AutoConfigInstancesIO._
 import com.leighperry.conduction.config.testsupport.EnvGenerators._
 import com.leighperry.conduction.config.testsupport.TestSupport
-import com.leighperry.conduction.config.{ConfigDescription, ConfigValueInfo, Configured, ConfiguredError, Environment}
-import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
+import com.leighperry.conduction.config.{ ConfigDescription, ConfigValueInfo, Configured, ConfiguredError, Environment }
+import org.scalacheck.{ Arbitrary, Gen, Prop, Properties }
 
 object MagnoliaConfigSupportTest extends Properties("Magnolia config support") with TestSupport {
 

@@ -21,7 +21,7 @@ object Environment {
       .delay(sys.env)
       .map(fromMap(_))
 
-  def fromPropertiesFile[F[_]: Sync](filepath: String, separator: String = "_"): F[Environment[F]] =
+  def fromPropertiesFile[F[_]: Sync](filepath: String): F[Environment[F]] =
     Sync[F].bracket(new FileInputStream(new File(filepath)).pure[F]) {
       stream =>
         Sync[F].delay {
@@ -37,15 +37,31 @@ object Environment {
         }
     }(_.close().pure[F])
 
-  def fromMap[F[_]: Applicative](
-    map: Map[String, String]
-  ): Environment[F] =
+  def fromMap[F[_]: Applicative](map: Map[String, String]): Environment[F] =
     new Environment[F] {
       override def get(key: Environment.Key): F[Option[String]] =
         map
           .get(key)
           .pure[F]
     }
+
+  /**
+   * Configuration derived from arguments of the form --key=value. Useful for Scio / Beam configuration, where
+   * configuration has to be done via the command line args.
+   */
+  def fromArgs[F[_]: Applicative](args: List[String]): Environment[F] =
+    fromMap(
+      args
+        .filter(s => s.startsWith("--") && s.contains("="))
+        .map(s => s.substring(2).split('=').toList)
+        .flatMap {
+          _ match {
+            case s1 :: s2 :: Nil => List((s1, s2))
+            case _ => Nil // ignored
+          }
+        }
+        .toMap
+    )
 
   def printer[F[_]: Applicative]: String => F[Unit] =
     (s: String) => println(s).pure[F]
