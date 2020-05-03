@@ -1,14 +1,12 @@
 package com.leighperry.conduction.config.magnolia
 
-import cats.data.{Kleisli, ValidatedNec}
 import cats.effect.IO
 import cats.instances.list._
 import cats.syntax.functor._
 import cats.syntax.traverse._
-import cats.{Applicative, Functor, Monad}
-import com.leighperry.conduction.config.Environment.Key
-import com.leighperry.conduction.config.{ConfigDescription, ConfigValueInfo, Configured, ConfiguredError, Conversion, Environment}
-import magnolia.{CaseClass, Magnolia, Param, SealedTrait}
+import cats.{ Functor, Monad }
+import com.leighperry.conduction.config.{ Configured, Conversion }
+import magnolia.{ CaseClass, Magnolia, Param, SealedTrait, Subtype }
 
 import scala.language.experimental.macros
 
@@ -19,7 +17,7 @@ import scala.language.experimental.macros
 object AutoConfigInstancesIO extends AutoConfigInstances[IO]
 
 /** Implicit resolution for any F[_] with Applicative */
-abstract class AutoConfigInstances[F[_]: Applicative] extends MagnoliaConfigSupport[F] {
+abstract class AutoConfigInstances[F[_]: Monad] extends MagnoliaConfigSupport[F] {
 
   // Explicitly re-expose the companion object implicits at higher priority
   implicit def configuredA[F[_]: Monad, A: Conversion]: Configured[F, A] =
@@ -43,7 +41,7 @@ abstract class AutoConfigInstances[F[_]: Applicative] extends MagnoliaConfigSupp
 ////
 
 /** Magnolia support for product types */
-private[magnolia] abstract class MagnoliaConfigSupport[F[_]: Applicative] {
+private[magnolia] abstract class MagnoliaConfigSupport[F[_]: Monad] {
 
   type Typeclass[T] = Configured[F, T]
 
@@ -66,20 +64,38 @@ private[magnolia] abstract class MagnoliaConfigSupport[F[_]: Applicative] {
       .traverse {
         p: Param[Typeclass, T] =>
           p.typeclass
-            .withSuffix(p.label.toUpperCase)
-            .asInstanceOf[Configured[F, Any]] // TODO methodCase to uppercaseSnake
+            .withSuffix(Content.classToSnakeUpperCase(p.label))
+            .asInstanceOf[Configured[F, Any]]
       }
       .map(list => caseClass.rawConstruct(list))
 
   /** How to choose which subtype of the sealed trait to use for decoding */
   def dispatch[T](sealedTrait: SealedTrait[Typeclass, T]): Typeclass[T] =
-    new Configured[F, T] {
-      override def value(name: Key): Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, T]] =
-        sys.error("Sum types are not supported")  // TODO support sealed traits
-
-      override def description(name: Key): ConfigDescription =
-        sys.error("Sum types are not supported")
-    }
+    sealedTrait
+      .subtypes
+      .tail
+      .foldLeft[Typeclass[T]](asTypeclass(sealedTrait.subtypes.head)) { // TODO ensafen
+        (agg: Configured[F, T], subtype: Subtype[Typeclass, T]) => agg | asTypeclass(subtype)
+      }
 
   implicit def gen[T]: Typeclass[T] = macro Magnolia.gen[T]
+
+  private def asTypeclass[T](subtype: Subtype[Typeclass, T]): Typeclass[T] =
+    subtype
+      .typeclass
+      .asInstanceOf[Configured[F, T]]
+      .withSuffix(Content.classToSnakeUpperCase(subtype.typeName.short))
+
+  private def parse(value: String): String = {
+    println(value)
+    value
+  }
+}
+
+object Content {
+  def classToSnakeUpperCase(name: String): String =
+    name
+      .replaceAll("([A-Z]+)([A-Z][a-z])", "$1_$2")
+      .replaceAll("([a-z\\d])([A-Z])", "$1_$2")
+      .toUpperCase()
 }

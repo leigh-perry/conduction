@@ -10,7 +10,7 @@ import cats.syntax.option._
 import cats.syntax.validated._
 import com.leighperry.conduction.config.testsupport.EnvGenerators._
 import com.leighperry.conduction.config.testsupport.TestSupport
-import org.scalacheck.{ Arbitrary, Gen, Properties }
+import org.scalacheck.{ Arbitrary, Properties }
 
 object ConfigSupportTest extends Properties("Config support") with TestSupport {
 
@@ -649,8 +649,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
   }
 
   property("Configured description should handle sealed traits") = simpleTest(
-    SomeAdt
-      .descriptor
+    Configured[IO, SomeAdt]
       .description("LP1")
       .shouldBe(
         ConfigDescription(
@@ -688,7 +687,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     e =>
       for {
         env <- e
-        c <- SomeAdt.descriptor[IO].value("LP1").run(env)
+        c <- Configured[IO, SomeAdt].value("LP1").run(env)
       } yield c.shouldBe(SomeAdt.Single(Endpoint("lp1-host", 1), "singleextra").validNec)
   }
 
@@ -707,7 +706,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     e =>
       for {
         env <- e
-        c <- SomeAdt.descriptor[IO].value("LP1").run(env)
+        c <- Configured[IO, SomeAdt].value("LP1").run(env)
       } yield c.shouldBe(
         SomeAdt.Dual(TwoEndpoints(Endpoint("multi-ep1-host", 2), Endpoint("multi-ep2-host", 3)), 123).validNec
       )
@@ -730,7 +729,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
     e =>
       for {
         env <- e
-        c <- SomeAdt.descriptor[IO].value("LP1").run(env)
+        c <- Configured[IO, SomeAdt].value("LP1").run(env)
       } yield c.shouldBe(
         SomeAdt
           .Triple(
@@ -811,7 +810,7 @@ object ConfigSupportTest extends Properties("Config support") with TestSupport {
         ).mapN(Triple.apply)
     }
 
-    implicit def descriptor[F[_]: Monad]: Configured[F, SomeAdt] =
+    implicit def configuredInstance[F[_]: Monad]: Configured[F, SomeAdt] =
       Single.configuredInstance[F].withSuffix("SINGLE") |
         Dual.configuredInstance[F].withSuffix("DUAL") |
         Triple.configuredInstance[F].withSuffix("TRIPLE")

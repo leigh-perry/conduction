@@ -1,20 +1,19 @@
 package com.leighperry.conduction.config.magnolia
 
-import cats.data.{ NonEmptyChain, Validated }
+import cats.data.{NonEmptyChain, Validated}
 import cats.effect.IO
 import cats.syntax.either._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
+import com.leighperry.conduction.config.Environment.{Key, fromMap}
 import com.leighperry.conduction.config.magnolia.AutoConfigInstancesIO._
 import com.leighperry.conduction.config.testsupport.EnvGenerators._
 import com.leighperry.conduction.config.testsupport.TestSupport
-import com.leighperry.conduction.config.{ Configured, ConfiguredError, Environment }
-import org.scalacheck.{ Arbitrary, Properties }
+import com.leighperry.conduction.config.{ConfigDescription, ConfigValueInfo, Configured, ConfiguredError, Environment}
+import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
 
-object MagnoliaConfigSupportTest extends Properties("Config support") with TestSupport {
-
-  import Environment._
+object MagnoliaConfigSupportTest extends Properties("Magnolia config support") with TestSupport {
 
   final case class KV[V](key: String, v: V)
 
@@ -508,10 +507,131 @@ object MagnoliaConfigSupportTest extends Properties("Config support") with TestS
       } yield c.shouldBe("int[567]".validNec)
   }
 
-  ////
+  property("Configured description should handle sealed traits") = simpleTest(
+    Configured[IO, MagnoliaSomeAdt]
+      .description("LP1")
+      .shouldBe(
+        ConfigDescription(
+          List(
+            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP1_HOST", "string"),
+            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP1_PORT", "integer"),
+            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP2_HOST", "string"),
+            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP2_PORT", "integer"),
+            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EXTRA", "integer"),
+            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EP_HOST", "string"),
+            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EP_PORT", "integer"),
+            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EXTRA", "string"),
+            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP1_HOST", "string"),
+            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP1_PORT", "integer"),
+            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP2_HOST", "string"),
+            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP2_PORT", "integer"),
+            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP3_HOST", "string"),
+            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP3_PORT", "integer"),
+            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EXTRA", "string")
+          )
+        )
+      )
+  )
+
+  property("Configured should handle sealed traits – MagnoliaSingle") = forAllIO(
+    genEnvIO(
+      Map(
+        "LP1_MAGNOLIA_SINGLE_EP_HOST" -> "lp1-host",
+        "LP1_MAGNOLIA_SINGLE_EP_PORT" -> "1",
+        "LP1_MAGNOLIA_SINGLE_EXTRA" -> "singleextra"
+      ),
+      "test19"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- Configured[IO, MagnoliaSomeAdt].value("LP1").run(env)
+      } yield c.shouldBe(MagnoliaSomeAdt.MagnoliaSingle(MagnoliaEndpoint("lp1-host", 1), "singleextra").validNec)
+  }
+
+  property("Configured should handle sealed traits – MagnoliaDual") = forAllIO(
+    genEnvIO(
+      Map(
+        "LP1_MAGNOLIA_DUAL_EPS_EP1_HOST" -> "multi-ep1-host",
+        "LP1_MAGNOLIA_DUAL_EPS_EP1_PORT" -> "2",
+        "LP1_MAGNOLIA_DUAL_EPS_EP2_HOST" -> "multi-ep2-host",
+        "LP1_MAGNOLIA_DUAL_EPS_EP2_PORT" -> "3",
+        "LP1_MAGNOLIA_DUAL_EXTRA" -> "123"
+      ),
+      "test20"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- Configured[IO, MagnoliaSomeAdt].value("LP1").run(env)
+      } yield c.shouldBe(
+        MagnoliaSomeAdt
+          .MagnoliaDual(
+            TwoMagnoliaEndpoints(MagnoliaEndpoint("multi-ep1-host", 2), MagnoliaEndpoint("multi-ep2-host", 3)),
+            123
+          )
+          .validNec
+      )
+  }
+
+  property("Configured should handle sealed traits - MagnoliaTriple") = forAllIO(
+    genEnvIO(
+      Map(
+        "LP1_MAGNOLIA_TRIPLE_EPS_EP1_HOST" -> "multi-ep1-host",
+        "LP1_MAGNOLIA_TRIPLE_EPS_EP1_PORT" -> "2",
+        "LP1_MAGNOLIA_TRIPLE_EPS_EP2_HOST" -> "multi-ep2-host",
+        "LP1_MAGNOLIA_TRIPLE_EPS_EP2_PORT" -> "3",
+        "LP1_MAGNOLIA_TRIPLE_EPS_EP3_HOST" -> "multi-ep3-host",
+        "LP1_MAGNOLIA_TRIPLE_EPS_EP3_PORT" -> "4",
+        "LP1_MAGNOLIA_TRIPLE_EXTRA" -> "singleextra"
+      ),
+      "test21"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- Configured[IO, MagnoliaSomeAdt].value("LP1").run(env)
+      } yield c.shouldBe(
+        MagnoliaSomeAdt
+          .MagnoliaTriple(
+            ThreeMagnoliaEndpoints(
+              MagnoliaEndpoint("multi-ep1-host", 2),
+              MagnoliaEndpoint("multi-ep2-host", 3),
+              MagnoliaEndpoint("multi-ep3-host", 4)
+            ),
+            "singleextra"
+          )
+          .validNec
+      )
+  }
+
+  property("classToSnakeUpperCase") = Prop.forAll(
+    for {
+      w <- Gen.nonEmptyListOf(genSymbol(2, 5).map(s => s"${s.head.toUpper}${s.substring(1).toLowerCase}"))
+      c <- Gen.alphaLowerChar
+    } yield (
+      w.map(_ + c).mkString, // WordxClassx
+      w.map(_ + c).map(_.toUpperCase).mkString("_") // WORDX_CLASSX
+    )
+  ) {
+    case (classCase, snakeCaseUpper) =>
+      Content.classToSnakeUpperCase(classCase) == snakeCaseUpper
+  }
+
+  //
 
   final case class MagnoliaEndpoint(host: String, port: Int)
   final case class TwoMagnoliaEndpoints(ep1: MagnoliaEndpoint, ep2: MagnoliaEndpoint)
   final case class ThreeMagnoliaEndpoints(ep1: MagnoliaEndpoint, ep2: MagnoliaEndpoint, ep3: MagnoliaEndpoint)
+
+  sealed trait MagnoliaSomeAdt
+  object MagnoliaSomeAdt {
+    final case class MagnoliaSingle(ep: MagnoliaEndpoint, extra: String) extends MagnoliaSomeAdt
+    final case class MagnoliaDual(eps: TwoMagnoliaEndpoints, extra: Int) extends MagnoliaSomeAdt
+    final case class MagnoliaTriple(eps: ThreeMagnoliaEndpoints, extra: String) extends MagnoliaSomeAdt
+  }
 
 }
