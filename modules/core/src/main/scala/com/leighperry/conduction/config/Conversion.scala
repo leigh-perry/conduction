@@ -62,7 +62,7 @@ object Conversion {
           override def of(s: String): Either[String, B] =
             fa.of(s).map(f)
           override val description: String =
-            s"${fa.description}(mapped)"
+            fa.description
         }
     }
 

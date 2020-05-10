@@ -75,7 +75,20 @@ lazy val `conduction-magnolia` =
     )
     .dependsOn(core % "compile->compile;test->test")
 
-lazy val allModules = List(core, `conduction-magnolia`)
+lazy val `conduction-shapeless` =
+  module("shapeless")
+    .settings(crossScalaVersions := Scala_1213)
+    .settings(
+      libraryDependencies ++=
+        Seq(
+          cats,
+          catsEffect,
+          shapeless
+        )
+    )
+    .dependsOn(core % "compile->compile;test->test")
+
+lazy val allModules = List(core, `conduction-magnolia`, `conduction-shapeless`)
 
 lazy val root =
   project

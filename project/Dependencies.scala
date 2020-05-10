@@ -8,7 +8,8 @@ object Dependencies {
     val catsEffect = "2.1.3"
 
     // NB: later versions give error: macro implementations cannot have implicit parameters other than WeakTypeTag evidences
-    lazy val magnolia = "0.12.8"
+    val magnolia = "0.12.8"
+    val shapeless = "2.3.3"
 
     val minitest = "2.8.2"
     val scalacheck = "1.14.3"
@@ -20,6 +21,7 @@ object Dependencies {
   val catsEffect = "org.typelevel" %% "cats-effect" % Version.catsEffect
 
   val magnolia = "com.propensive" %% "magnolia" % Version.magnolia
+  val shapeless = "com.chuusai" %% "shapeless" % Version.shapeless
 
   val minitest = "io.monix" %% "minitest" % Version.minitest
   val minitestLaws = "io.monix" %% "minitest-laws" % Version.minitest

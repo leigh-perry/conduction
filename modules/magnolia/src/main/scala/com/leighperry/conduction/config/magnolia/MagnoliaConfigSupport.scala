@@ -40,7 +40,6 @@ abstract class AutoConfigInstances[F[_]: Monad] extends MagnoliaConfigSupport[F]
 
 ////
 
-/** Magnolia support for product types */
 private[magnolia] abstract class MagnoliaConfigSupport[F[_]: Monad] {
 
   type Typeclass[T] = Configured[F, T]
@@ -74,9 +73,8 @@ private[magnolia] abstract class MagnoliaConfigSupport[F[_]: Monad] {
     sealedTrait
       .subtypes
       .tail
-      .foldLeft[Typeclass[T]](asTypeclass(sealedTrait.subtypes.head)) { // TODO ensafen
-        (agg: Configured[F, T], subtype: Subtype[Typeclass, T]) => agg | asTypeclass(subtype)
-      }
+      .foldLeft[Typeclass[T]](asTypeclass(sealedTrait.subtypes.head))((agg, subtype) => agg | asTypeclass(subtype))
+  //Foldable[List].reduceLeftToOption[Subtype[Typeclass, T], Typeclass[T]](sealedTrait.subtypes.toList)(asTypeclass)((agg, tc) => agg | asTypeclass(tc)).get // ahem
 
   implicit def gen[T]: Typeclass[T] = macro Magnolia.gen[T]
 
