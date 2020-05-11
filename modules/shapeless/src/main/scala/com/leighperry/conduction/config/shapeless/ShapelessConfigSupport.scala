@@ -86,7 +86,7 @@ private[shapeless] abstract class ShapelessConfigSupport1[F[_]: Monad] {
 /** Coproduct types */
 private[shapeless] abstract class ShapelessConfigSupport0[F[_]: Monad] extends ShapelessConfigSupport1[F] {
 
-  // TODO ADTs https://stackoverflow.com/questions/52117213/generic-derivation-for-adts-in-scala-with-a-custom-representation
+  // ADTs https://stackoverflow.com/questions/52117213/generic-derivation-for-adts-in-scala-with-a-custom-representation
 
   trait ReprConfigured[C <: Coproduct] extends Configured[F, C]
 

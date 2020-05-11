@@ -77,7 +77,7 @@ lazy val `conduction-magnolia` =
 
 lazy val `conduction-shapeless` =
   module("shapeless")
-    .settings(crossScalaVersions := Scala_1213)
+    .settings(crossScalaVersions := Seq(Scala_213))  // TODO 2.12
     .settings(
       libraryDependencies ++=
         Seq(

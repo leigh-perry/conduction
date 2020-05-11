@@ -77,7 +77,7 @@ trait Configured[F[_], A] {
     def leftName(name: Key) = s"${name}_C1"
     def rightName(name: Key) = s"${name}_C2"
 
-    // TODO applicative product
+    // TODO applicative product / andThen
     Configured.create(
       name =>
         self.value(leftName(name)).flatMap {
