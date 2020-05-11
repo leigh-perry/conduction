@@ -18,6 +18,9 @@ import com.leighperry.conduction.config.Environment.Key
 final case class ConfigValueInfo(name: String, valueType: String)
 
 final case class ConfigDescription(values: List[ConfigValueInfo]) extends AnyVal {
+  def sorted: ConfigDescription =
+    ConfigDescription(values.sortBy(_.name))
+
   def prettyPrint(separator: String): String =
     values
       .map(v => s"${v.name}: ${v.valueType}")
@@ -74,6 +77,7 @@ trait Configured[F[_], A] {
     def leftName(name: Key) = s"${name}_C1"
     def rightName(name: Key) = s"${name}_C2"
 
+    // TODO applicative product
     Configured.create(
       name =>
         self.value(leftName(name)).flatMap {
@@ -211,10 +215,11 @@ object Configured {
 
   ////
 
-  implicit class SealedTraitOps[F[_], ST, A <: ST](ca: Configured[F, A]) {
-    def orAdt[B <: ST](cb: Configured[F, B])(implicit F: Monad[F]): Configured[F, ST] =
+  implicit class SealedTraitOps[F[_]: Monad, ST, A <: ST](ca: Configured[F, A]) {
+    def orAdt[B <: ST](cb: Configured[F, B]): Configured[F, ST] =
       create(
         name =>
+        // TODO applicative product
           ca.value(name).flatMap {
             _.fold(
               errors1 =>
@@ -230,9 +235,11 @@ object Configured {
         name => ca.description(name) |+| cb.description(name)
       )
 
-    def |[B <: ST](cb: Configured[F, B])(implicit F: Monad[F]): Configured[F, ST] =
+    def |[B <: ST](cb: Configured[F, B]): Configured[F, ST] =
       orAdt(cb)
   }
+
+  ////
 
   def create[F[_], A](
     fValue: Key => Kleisli[F, Environment[F], ValidatedNec[ConfiguredError, A]],
@@ -247,7 +254,13 @@ object Configured {
 
   def const[F[_]: Applicative, A](a: A): Configured[F, A] =
     create(
-      _ => Kleisli((_: Environment[F]) => a.validNec.pure[F]),
+      _ => Kleisli(_ => a.validNec.pure[F]),
+      _ => Monoid[ConfigDescription].empty
+    )
+
+  def fail[F[_]: Applicative, A](err: ConfiguredError): Configured[F, A] =
+    create(
+      _ => Kleisli(_ => err.invalidNec.pure[F]),
       _ => Monoid[ConfigDescription].empty
     )
 

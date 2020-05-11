@@ -510,17 +510,18 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
   property("Configured description should handle sealed traits") = simpleTest(
     Configured[IO, MagnoliaSomeAdt]
       .description("LP1")
+      .sorted
       .shouldBe(
         ConfigDescription(
           List(
+            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EP_HOST", "string"),
+            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EP_PORT", "integer"),
+            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EXTRA", "string"),
             ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP1_HOST", "string"),
             ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP1_PORT", "integer"),
             ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP2_HOST", "string"),
             ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP2_PORT", "integer"),
             ConfigValueInfo("LP1_MAGNOLIA_DUAL_EXTRA", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EP_HOST", "string"),
-            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EP_PORT", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EXTRA", "string"),
             ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP1_HOST", "string"),
             ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP1_PORT", "integer"),
             ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP2_HOST", "string"),
@@ -529,7 +530,7 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
             ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP3_PORT", "integer"),
             ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EXTRA", "string")
           )
-        )
+        ).sorted
       )
   )
 

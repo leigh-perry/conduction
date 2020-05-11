@@ -134,7 +134,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   ////
 
   property("Present valid Configured[IO, ShapelessEndpoint]") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "LP1_HOST" -> "lp1-host",
         "LP1_PORT" -> "1"
@@ -150,7 +150,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Present valid Configured[IO, TwoShapelessEndpoints]") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "MULTI_EP1_HOST" -> "multi-ep1-host",
         "MULTI_EP1_PORT" -> "2",
@@ -170,7 +170,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Present valid Configured[IO, ThreeShapelessEndpoints]") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "MULTI_EP1_HOST" -> "multi-ep1-host",
         "MULTI_EP1_PORT" -> "2",
@@ -195,19 +195,8 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
       )
   }
 
-  def hgenEnvIO(
-    params: Map[String, String],
-    propertiesFilename: String,
-    log: String => IO[Unit] = silencer[IO]
-  ): Gen[IO[Environment[IO]]] =
-//    Gen.oneOf(
-      Gen.const(envIO(params, log))
-//      Gen.const(argsIO(params, log)),
-//      Gen.const(propertyFileIO(propertiesFilename, log))
-//    )
-
   property("Present valid Configured[IO, Either[ShapelessEndpoint, ShapelessEndpoint]]") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "CHOICE_C1_HOST" -> "choice-c1-host",
         "CHOICE_C1_PORT" -> "5"
@@ -223,7 +212,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Present valid Configured[IO, Either[ShapelessEndpoint, ShapelessEndpoint]] via `or` syntax") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "CHOICE_C1_HOST" -> "choice-c1-host",
         "CHOICE_C1_PORT" -> "5"
@@ -239,7 +228,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Missing Configured[IO, Either[ShapelessEndpoint, ShapelessEndpoint]]") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "CHOICE_C1_HOST" -> "choice-c1-host",
         "CHOICE_C1_PORT" -> "5"
@@ -256,7 +245,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
 
   property("Present valid Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint]], ShapelessEndpoint]") =
     forAllIO(
-      hgenEnvIO(
+      genEnvIO(
         Map(
           "CHOICE_C1_C1_HOST" -> "choice-c1-c1-host",
           "CHOICE_C1_C1_PORT" -> "7",
@@ -278,7 +267,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   property(
     "Present valid Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint]], ShapelessEndpoint] left/left via `or` syntax"
   ) = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "CHOICE_C1_C1_HOST" -> "choice-c1-c1-host",
         "CHOICE_C1_C1_PORT" -> "7",
@@ -308,7 +297,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   property(
     "Present valid Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint]], ShapelessEndpoint] left/right via `or` syntax"
   ) = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "CHOICE_C1_C2_HOST" -> "choice-c1-c2-host",
         "CHOICE_C1_C2_PORT" -> "8",
@@ -334,7 +323,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Present valid Configured[IO, Either[Either[,]], ShapelessEndpoint] right via `or` syntax") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "CHOICE_C2_HOST" -> "choice2-c2-host",
         "CHOICE_C2_PORT" -> "5"
@@ -361,7 +350,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
     parts.mkString(separator)
 
   property("Missing Configured[IO, Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]") =
-    forAllIO(hgenEnvIO(Map.empty, "empty")) {
+    forAllIO(genEnvIO(Map.empty, "empty")) {
       e =>
         for {
           env <- e
@@ -387,7 +376,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   property(
     "Present valid Configured[IO, Option[Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]]"
   ) = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "CHOICE_OPT_C2_C1_HOST" -> "choice-opt-c2-c1-host",
         "CHOICE_OPT_C2_C1_PORT" -> "9"
@@ -404,7 +393,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Missing Configured[IO, Option[Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]]") =
-    forAllIO(hgenEnvIO(Map.empty, "empty")) {
+    forAllIO(genEnvIO(Map.empty, "empty")) {
       e =>
         for {
           env <- e
@@ -414,7 +403,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
     }
 
   property("Present valid Configured[IO, List[Int]]") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "INTLIST_COUNT" -> "3",
         "INTLIST_0" -> "1000",
@@ -431,7 +420,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
       } yield c.shouldBe(List(1000, 1001, 1002).validNec)
   }
 
-  property("Missing Configured[IO, List[Int]]") = forAllIO(hgenEnvIO(Map.empty, "empty")) {
+  property("Missing Configured[IO, List[Int]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
     e =>
       for {
         env <- e
@@ -440,7 +429,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Present valid Configured[IO, List[ShapelessEndpoint]]") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "EPLIST_COUNT" -> "2",
         "EPLIST_0_HOST" -> "eplist0-host",
@@ -458,7 +447,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
       } yield c.shouldBe(List(ShapelessEndpoint("eplist0-host", 2), ShapelessEndpoint("eplist1-host", 3)).validNec)
   }
 
-  property("Missing Configured[IO, List[ShapelessEndpoint]]") = forAllIO(hgenEnvIO(Map.empty, "empty")) {
+  property("Missing Configured[IO, List[ShapelessEndpoint]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
     e =>
       for {
         env <- e
@@ -467,7 +456,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Present valid Configured[IO, List[TwoShapelessEndpoints]]") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "TEPLIST_COUNT" -> "2",
         "TEPLIST_0_EP1_HOST" -> "teplist0-ep1-host",
@@ -495,7 +484,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
       )
   }
 
-  property("Missing Configured[IO, List[TwoShapelessEndpoints]]") = forAllIO(hgenEnvIO(Map.empty, "empty")) {
+  property("Missing Configured[IO, List[TwoShapelessEndpoints]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
     e =>
       for {
         env <- e
@@ -504,7 +493,7 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
   }
 
   property("Configured should handle newtypes") = forAllIO(
-    hgenEnvIO(
+    genEnvIO(
       Map(
         "SOMEINT" -> "567"
       ),
@@ -518,106 +507,107 @@ object ShapelessConfigSupportTest extends Properties("Shapeless config support")
       } yield c.shouldBe("int[567]".validNec)
   }
 
-//  property("Configured description should handle sealed traits") = simpleTest(
-//    Configured[IO, ShapelessSomeAdt]
-//      .description("LP1")
-//      .shouldBe(
-//        ConfigDescription(
-//          List(
-//            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP1_HOST", "string"),
-//            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP1_PORT", "integer"),
-//            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP2_HOST", "string"),
-//            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP2_PORT", "integer"),
-//            ConfigValueInfo("LP1_SHAPELESS_DUAL_EXTRA", "integer"),
-//            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EP_HOST", "string"),
-//            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EP_PORT", "integer"),
-//            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EXTRA", "string"),
-//            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP1_HOST", "string"),
-//            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP1_PORT", "integer"),
-//            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP2_HOST", "string"),
-//            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP2_PORT", "integer"),
-//            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP3_HOST", "string"),
-//            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP3_PORT", "integer"),
-//            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EXTRA", "string")
-//          )
-//        )
-//      )
-//  )
-//
-//  property("Configured should handle sealed traits – ShapelessSingle") = forAllIO(
-//    hgenEnvIO(
-//      Map(
-//        "LP1_SHAPELESS_SINGLE_EP_HOST" -> "lp1-host",
-//        "LP1_SHAPELESS_SINGLE_EP_PORT" -> "1",
-//        "LP1_SHAPELESS_SINGLE_EXTRA" -> "singleextra"
-//      ),
-//      "test19"
-//    )
-//  ) {
-//    e =>
-//      for {
-//        env <- e
-//        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
-//      } yield c.shouldBe(ShapelessSomeAdt.ShapelessSingle(ShapelessEndpoint("lp1-host", 1), "singleextra").validNec)
-//  }
-//
-//  property("Configured should handle sealed traits – ShapelessDual") = forAllIO(
-//    hgenEnvIO(
-//      Map(
-//        "LP1_SHAPELESS_DUAL_EPS_EP1_HOST" -> "multi-ep1-host",
-//        "LP1_SHAPELESS_DUAL_EPS_EP1_PORT" -> "2",
-//        "LP1_SHAPELESS_DUAL_EPS_EP2_HOST" -> "multi-ep2-host",
-//        "LP1_SHAPELESS_DUAL_EPS_EP2_PORT" -> "3",
-//        "LP1_SHAPELESS_DUAL_EXTRA" -> "123"
-//      ),
-//      "test20"
-//    )
-//  ) {
-//    e =>
-//      for {
-//        env <- e
-//        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
-//      } yield c.shouldBe(
-//        ShapelessSomeAdt
-//          .ShapelessDual(
-//            TwoShapelessEndpoints(ShapelessEndpoint("multi-ep1-host", 2), ShapelessEndpoint("multi-ep2-host", 3)),
-//            123
-//          )
-//          .validNec
-//      )
-//  }
-//
-//  property("Configured should handle sealed traits - ShapelessTriple") = forAllIO(
-//    hgenEnvIO(
-//      Map(
-//        "LP1_SHAPELESS_TRIPLE_EPS_EP1_HOST" -> "multi-ep1-host",
-//        "LP1_SHAPELESS_TRIPLE_EPS_EP1_PORT" -> "2",
-//        "LP1_SHAPELESS_TRIPLE_EPS_EP2_HOST" -> "multi-ep2-host",
-//        "LP1_SHAPELESS_TRIPLE_EPS_EP2_PORT" -> "3",
-//        "LP1_SHAPELESS_TRIPLE_EPS_EP3_HOST" -> "multi-ep3-host",
-//        "LP1_SHAPELESS_TRIPLE_EPS_EP3_PORT" -> "4",
-//        "LP1_SHAPELESS_TRIPLE_EXTRA" -> "singleextra"
-//      ),
-//      "test21"
-//    )
-//  ) {
-//    e =>
-//      for {
-//        env <- e
-//        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
-//      } yield c.shouldBe(
-//        ShapelessSomeAdt
-//          .ShapelessTriple(
-//            ThreeShapelessEndpoints(
-//              ShapelessEndpoint("multi-ep1-host", 2),
-//              ShapelessEndpoint("multi-ep2-host", 3),
-//              ShapelessEndpoint("multi-ep3-host", 4)
-//            ),
-//            "singleextra"
-//          )
-//          .validNec
-//      )
-//  }
+  property("Configured description should handle sealed traits") = simpleTest(
+    Configured[IO, ShapelessSomeAdt]
+      .description("LP1")
+      .sorted
+      .shouldBe(
+        ConfigDescription(
+          List(
+            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EP_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EP_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EXTRA", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP1_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP1_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP2_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP2_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EXTRA", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP1_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP1_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP2_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP2_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP3_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP3_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EXTRA", "string")
+          )
+        ).sorted
+      )
+  )
+
+  property("Configured should handle sealed traits – ShapelessSingle") = forAllIO(
+    genEnvIO(
+      Map(
+        "LP1_SHAPELESS_SINGLE_EP_HOST" -> "lp1-host",
+        "LP1_SHAPELESS_SINGLE_EP_PORT" -> "1",
+        "LP1_SHAPELESS_SINGLE_EXTRA" -> "singleextra"
+      ),
+      "test22"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
+      } yield c.shouldBe(ShapelessSomeAdt.ShapelessSingle(ShapelessEndpoint("lp1-host", 1), "singleextra").validNec)
+  }
+
+  property("Configured should handle sealed traits – ShapelessDual") = forAllIO(
+    genEnvIO(
+      Map(
+        "LP1_SHAPELESS_DUAL_EPS_EP1_HOST" -> "multi-ep1-host",
+        "LP1_SHAPELESS_DUAL_EPS_EP1_PORT" -> "2",
+        "LP1_SHAPELESS_DUAL_EPS_EP2_HOST" -> "multi-ep2-host",
+        "LP1_SHAPELESS_DUAL_EPS_EP2_PORT" -> "3",
+        "LP1_SHAPELESS_DUAL_EXTRA" -> "123"
+      ),
+      "test23"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
+      } yield c.shouldBe(
+        ShapelessSomeAdt
+          .ShapelessDual(
+            TwoShapelessEndpoints(ShapelessEndpoint("multi-ep1-host", 2), ShapelessEndpoint("multi-ep2-host", 3)),
+            123
+          )
+          .validNec
+      )
+  }
+
+  property("Configured should handle sealed traits - ShapelessTriple") = forAllIO(
+    genEnvIO(
+      Map(
+        "LP1_SHAPELESS_TRIPLE_EPS_EP1_HOST" -> "multi-ep1-host",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP1_PORT" -> "2",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP2_HOST" -> "multi-ep2-host",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP2_PORT" -> "3",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP3_HOST" -> "multi-ep3-host",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP3_PORT" -> "4",
+        "LP1_SHAPELESS_TRIPLE_EXTRA" -> "singleextra"
+      ),
+      "test24"
+    )
+  ) {
+    e =>
+      for {
+        env <- e
+        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
+      } yield c.shouldBe(
+        ShapelessSomeAdt
+          .ShapelessTriple(
+            ThreeShapelessEndpoints(
+              ShapelessEndpoint("multi-ep1-host", 2),
+              ShapelessEndpoint("multi-ep2-host", 3),
+              ShapelessEndpoint("multi-ep3-host", 4)
+            ),
+            "singleextra"
+          )
+          .validNec
+      )
+  }
 
   property("classToSnakeUpperCase") = Prop.forAll(
     for {
