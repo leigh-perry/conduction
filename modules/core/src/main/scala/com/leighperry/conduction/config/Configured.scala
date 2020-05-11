@@ -77,7 +77,6 @@ trait Configured[F[_], A] {
     def leftName(name: Key) = s"${name}_C1"
     def rightName(name: Key) = s"${name}_C2"
 
-    // TODO applicative product / andThen
     Configured.create(
       name =>
         self.value(leftName(name)).flatMap {
@@ -219,7 +218,6 @@ object Configured {
     def orAdt[B <: ST](cb: Configured[F, B]): Configured[F, ST] =
       create(
         name =>
-        // TODO applicative product
           ca.value(name).flatMap {
             _.fold(
               errors1 =>
