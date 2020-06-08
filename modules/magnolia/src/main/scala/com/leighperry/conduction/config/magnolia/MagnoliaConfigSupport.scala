@@ -1,5 +1,6 @@
 package com.leighperry.conduction.config.magnolia
 
+import cats.data.NonEmptyList
 import cats.effect.IO
 import cats.instances.list._
 import cats.syntax.functor._
@@ -70,11 +71,10 @@ private[magnolia] abstract class MagnoliaConfigSupport[F[_]: Monad] {
 
   /** How to choose which subtype of the sealed trait to use for decoding */
   def dispatch[T](sealedTrait: SealedTrait[Typeclass, T]): Typeclass[T] =
-    sealedTrait
-      .subtypes
-      .tail
-      .foldLeft[Typeclass[T]](asTypeclass(sealedTrait.subtypes.head))((agg, subtype) => agg | asTypeclass(subtype))
-  //Foldable[List].reduceLeftToOption[Subtype[Typeclass, T], Typeclass[T]](sealedTrait.subtypes.toList)(asTypeclass)((agg, tc) => agg | asTypeclass(tc)).get // ahem
+    NonEmptyList
+      .fromListUnsafe(sealedTrait.subtypes.toList)
+      .map(asTypeclass)
+      .reduceLeft(_ | _)
 
   implicit def gen[T]: Typeclass[T] = macro Magnolia.gen[T]
 
