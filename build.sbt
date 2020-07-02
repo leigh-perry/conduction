@@ -29,7 +29,7 @@ inThisBuild(
 
 lazy val compilerPlugins =
   List(
-    compilerPlugin("org.typelevel" %% "kind-projector" % Version.kindProjectorVersion)
+    compilerPlugin("org.typelevel" %% "kind-projector" % Version.kindProjector cross CrossVersion.full)
   )
 
 lazy val commonSettings =
