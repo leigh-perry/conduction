@@ -29,7 +29,7 @@ inThisBuild(
 
 lazy val compilerPlugins =
   List(
-    compilerPlugin("org.typelevel" %% "kind-projector" % Version.kindProjectorVersion)
+    compilerPlugin("org.typelevel" %% "kind-projector" % Version.kindProjector cross CrossVersion.full)
   )
 
 lazy val commonSettings =
@@ -75,7 +75,20 @@ lazy val `conduction-magnolia` =
     )
     .dependsOn(core % "compile->compile;test->test")
 
-lazy val allModules = List(core, `conduction-magnolia`)
+lazy val `conduction-shapeless` =
+  module("shapeless")
+    .settings(crossScalaVersions := Seq(Scala_213))  // TODO 2.12
+    .settings(
+      libraryDependencies ++=
+        Seq(
+          cats,
+          catsEffect,
+          shapeless
+        )
+    )
+    .dependsOn(core % "compile->compile;test->test")
+
+lazy val allModules = List(core, `conduction-magnolia`, `conduction-shapeless`)
 
 lazy val root =
   project

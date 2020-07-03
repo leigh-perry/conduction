@@ -1,19 +1,19 @@
-package com.leighperry.conduction.config.magnolia
+package com.leighperry.conduction.config.shapeless
 
-import cats.data.{ NonEmptyChain, Validated }
+import cats.data.{NonEmptyChain, Validated}
 import cats.effect.IO
 import cats.syntax.either._
 import cats.syntax.functor._
 import cats.syntax.option._
 import cats.syntax.validated._
-import com.leighperry.conduction.config.Environment.{ fromMap, Key }
-import com.leighperry.conduction.config.magnolia.AutoConfigInstancesIO._
+import com.leighperry.conduction.config.Environment.{Key, fromMap, silencer}
+import com.leighperry.conduction.config.shapeless.AutoConfigInstancesIO._
 import com.leighperry.conduction.config.testsupport.EnvGenerators._
 import com.leighperry.conduction.config.testsupport.TestSupport
-import com.leighperry.conduction.config.{ ConfigDescription, ConfigValueInfo, Configured, ConfiguredError, Environment }
-import org.scalacheck.{ Arbitrary, Gen, Prop, Properties }
+import com.leighperry.conduction.config.{ConfigDescription, ConfigValueInfo, Configured, ConfiguredError, Environment}
+import org.scalacheck.{Arbitrary, Gen, Prop, Properties}
 
-object MagnoliaConfigSupportTest extends Properties("Magnolia config support") with TestSupport {
+object ShapelessConfigSupportTest extends Properties("Shapeless config support") with TestSupport {
 
   final case class KV[V](key: String, v: V)
 
@@ -133,7 +133,7 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
 
   ////
 
-  property("Present valid Configured[IO, MagnoliaEndpoint]") = forAllIO(
+  property("Present valid Configured[IO, ShapelessEndpoint]") = forAllIO(
     genEnvIO(
       Map(
         "LP1_HOST" -> "lp1-host",
@@ -145,11 +145,11 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, MagnoliaEndpoint]("LP1").run(env)
-      } yield c.shouldBe(MagnoliaEndpoint("lp1-host", 1).validNec)
+        c <- Configured[IO, ShapelessEndpoint]("LP1").run(env)
+      } yield c.shouldBe(ShapelessEndpoint("lp1-host", 1).validNec)
   }
 
-  property("Present valid Configured[IO, TwoMagnoliaEndpoints]") = forAllIO(
+  property("Present valid Configured[IO, TwoShapelessEndpoints]") = forAllIO(
     genEnvIO(
       Map(
         "MULTI_EP1_HOST" -> "multi-ep1-host",
@@ -163,13 +163,13 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, TwoMagnoliaEndpoints]("MULTI").run(env)
+        c <- Configured[IO, TwoShapelessEndpoints]("MULTI").run(env)
       } yield c.shouldBe(
-        TwoMagnoliaEndpoints(MagnoliaEndpoint("multi-ep1-host", 2), MagnoliaEndpoint("multi-ep2-host", 3)).validNec
+        TwoShapelessEndpoints(ShapelessEndpoint("multi-ep1-host", 2), ShapelessEndpoint("multi-ep2-host", 3)).validNec
       )
   }
 
-  property("Present valid Configured[IO, ThreeMagnoliaEndpoints]") = forAllIO(
+  property("Present valid Configured[IO, ThreeShapelessEndpoints]") = forAllIO(
     genEnvIO(
       Map(
         "MULTI_EP1_HOST" -> "multi-ep1-host",
@@ -185,17 +185,17 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, ThreeMagnoliaEndpoints]("MULTI").run(env)
+        c <- Configured[IO, ThreeShapelessEndpoints]("MULTI").run(env)
       } yield c.shouldBe(
-        ThreeMagnoliaEndpoints(
-          MagnoliaEndpoint("multi-ep1-host", 2),
-          MagnoliaEndpoint("multi-ep2-host", 3),
-          MagnoliaEndpoint("multi-ep3-host", 4)
+        ThreeShapelessEndpoints(
+          ShapelessEndpoint("multi-ep1-host", 2),
+          ShapelessEndpoint("multi-ep2-host", 3),
+          ShapelessEndpoint("multi-ep3-host", 4)
         ).validNec
       )
   }
 
-  property("Present valid Configured[IO, Either[MagnoliaEndpoint, MagnoliaEndpoint]]") = forAllIO(
+  property("Present valid Configured[IO, Either[ShapelessEndpoint, ShapelessEndpoint]]") = forAllIO(
     genEnvIO(
       Map(
         "CHOICE_C1_HOST" -> "choice-c1-host",
@@ -207,11 +207,11 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, Either[MagnoliaEndpoint, MagnoliaEndpoint]]("CHOICE").run(env)
-      } yield c.shouldBe(MagnoliaEndpoint("choice-c1-host", 5).asLeft.valid)
+        c <- Configured[IO, Either[ShapelessEndpoint, ShapelessEndpoint]]("CHOICE").run(env)
+      } yield c.shouldBe(ShapelessEndpoint("choice-c1-host", 5).asLeft.valid)
   }
 
-  property("Present valid Configured[IO, Either[MagnoliaEndpoint, MagnoliaEndpoint]] via `or` syntax") = forAllIO(
+  property("Present valid Configured[IO, Either[ShapelessEndpoint, ShapelessEndpoint]] via `or` syntax") = forAllIO(
     genEnvIO(
       Map(
         "CHOICE_C1_HOST" -> "choice-c1-host",
@@ -223,11 +223,11 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, MagnoliaEndpoint].or(Configured[IO, MagnoliaEndpoint]).value("CHOICE").run(env)
-      } yield c.shouldBe(MagnoliaEndpoint("choice-c1-host", 5).asLeft.valid)
+        c <- Configured[IO, ShapelessEndpoint].or(Configured[IO, ShapelessEndpoint]).value("CHOICE").run(env)
+      } yield c.shouldBe(ShapelessEndpoint("choice-c1-host", 5).asLeft.valid)
   }
 
-  property("Missing Configured[IO, Either[MagnoliaEndpoint, MagnoliaEndpoint]]") = forAllIO(
+  property("Missing Configured[IO, Either[ShapelessEndpoint, ShapelessEndpoint]]") = forAllIO(
     genEnvIO(
       Map(
         "CHOICE_C1_HOST" -> "choice-c1-host",
@@ -239,11 +239,11 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, Either[MagnoliaEndpoint, MagnoliaEndpoint]]("CHOICE").run(env)
-      } yield c.shouldBe(MagnoliaEndpoint("choice-c1-host", 5).asLeft.valid)
+        c <- Configured[IO, Either[ShapelessEndpoint, ShapelessEndpoint]]("CHOICE").run(env)
+      } yield c.shouldBe(ShapelessEndpoint("choice-c1-host", 5).asLeft.valid)
   }
 
-  property("Present valid Configured[IO, Either[Either[MagnoliaEndpoint, MagnoliaEndpoint]], MagnoliaEndpoint]") =
+  property("Present valid Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint]], ShapelessEndpoint]") =
     forAllIO(
       genEnvIO(
         Map(
@@ -260,12 +260,12 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
       e =>
         for {
           env <- e
-          c <- Configured[IO, Either[Either[MagnoliaEndpoint, MagnoliaEndpoint], MagnoliaEndpoint]]("CHOICE").run(env)
-        } yield c.shouldBe(MagnoliaEndpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
+          c <- Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint], ShapelessEndpoint]]("CHOICE").run(env)
+        } yield c.shouldBe(ShapelessEndpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
     }
 
   property(
-    "Present valid Configured[IO, Either[Either[MagnoliaEndpoint, MagnoliaEndpoint]], MagnoliaEndpoint] left/left via `or` syntax"
+    "Present valid Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint]], ShapelessEndpoint] left/left via `or` syntax"
   ) = forAllIO(
     genEnvIO(
       Map(
@@ -283,19 +283,19 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
       for {
         env <- e
         c <- {
-          val cfg: Configured[IO, Either[Either[MagnoliaEndpoint, MagnoliaEndpoint], MagnoliaEndpoint]] =
-            Configured[IO, MagnoliaEndpoint]
-              .or[MagnoliaEndpoint](Configured[IO, MagnoliaEndpoint])
-              .or[MagnoliaEndpoint](Configured[IO, MagnoliaEndpoint])
+          val cfg: Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint], ShapelessEndpoint]] =
+            Configured[IO, ShapelessEndpoint]
+              .or[ShapelessEndpoint](Configured[IO, ShapelessEndpoint])
+              .or[ShapelessEndpoint](Configured[IO, ShapelessEndpoint])
           cfg
             .value("CHOICE")
             .run(env)
         }
-      } yield c.shouldBe(MagnoliaEndpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
+      } yield c.shouldBe(ShapelessEndpoint("choice-c1-c1-host", 7).asLeft.asLeft.validNec)
   }
 
   property(
-    "Present valid Configured[IO, Either[Either[MagnoliaEndpoint, MagnoliaEndpoint]], MagnoliaEndpoint] left/right via `or` syntax"
+    "Present valid Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint]], ShapelessEndpoint] left/right via `or` syntax"
   ) = forAllIO(
     genEnvIO(
       Map(
@@ -313,16 +313,16 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
       for {
         env <- e
         c <- {
-          val cfg: Configured[IO, Either[Either[MagnoliaEndpoint, MagnoliaEndpoint], MagnoliaEndpoint]] =
-            Configured[IO, MagnoliaEndpoint].or(Configured[IO, MagnoliaEndpoint]).or(Configured[IO, MagnoliaEndpoint])
+          val cfg: Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint], ShapelessEndpoint]] =
+            Configured[IO, ShapelessEndpoint].or(Configured[IO, ShapelessEndpoint]).or(Configured[IO, ShapelessEndpoint])
           cfg
             .value("CHOICE")
             .run(env)
         }
-      } yield c.shouldBe(MagnoliaEndpoint("choice-c1-c2-host", 8).asRight.asLeft.validNec)
+      } yield c.shouldBe(ShapelessEndpoint("choice-c1-c2-host", 8).asRight.asLeft.validNec)
   }
 
-  property("Present valid Configured[IO, Either[Either[,]], MagnoliaEndpoint] right via `or` syntax") = forAllIO(
+  property("Present valid Configured[IO, Either[Either[,]], ShapelessEndpoint] right via `or` syntax") = forAllIO(
     genEnvIO(
       Map(
         "CHOICE_C2_HOST" -> "choice2-c2-host",
@@ -335,13 +335,13 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
       for {
         env <- e
         c <- {
-          val cfg: Configured[IO, Either[Either[MagnoliaEndpoint, MagnoliaEndpoint], MagnoliaEndpoint]] =
-            Configured[IO, MagnoliaEndpoint].or(Configured[IO, MagnoliaEndpoint]).or(Configured[IO, MagnoliaEndpoint])
+          val cfg: Configured[IO, Either[Either[ShapelessEndpoint, ShapelessEndpoint], ShapelessEndpoint]] =
+            Configured[IO, ShapelessEndpoint].or(Configured[IO, ShapelessEndpoint]).or(Configured[IO, ShapelessEndpoint])
           cfg
             .value("CHOICE")
             .run(env)
         }
-      } yield c.shouldBe(MagnoliaEndpoint("choice2-c2-host", 5).asRight.validNec)
+      } yield c.shouldBe(ShapelessEndpoint("choice2-c2-host", 5).asRight.validNec)
   }
 
   private val separator = "_"
@@ -349,12 +349,12 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
   def keyOf(parts: String*): Key =
     parts.mkString(separator)
 
-  property("Missing Configured[IO, Either[MagnoliaEndpoint, Either[MagnoliaEndpoint, MagnoliaEndpoint]]]") =
+  property("Missing Configured[IO, Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]") =
     forAllIO(genEnvIO(Map.empty, "empty")) {
       e =>
         for {
           env <- e
-          c <- Configured[IO, Either[MagnoliaEndpoint, Either[MagnoliaEndpoint, MagnoliaEndpoint]]]("CHOICE").run(env)
+          c <- Configured[IO, Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]("CHOICE").run(env)
         } yield c.shouldSatisfy(
           _.fold(
             e =>
@@ -374,7 +374,7 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     }
 
   property(
-    "Present valid Configured[IO, Option[Either[MagnoliaEndpoint, Either[MagnoliaEndpoint, MagnoliaEndpoint]]]]"
+    "Present valid Configured[IO, Option[Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]]"
   ) = forAllIO(
     genEnvIO(
       Map(
@@ -387,17 +387,17 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, Option[Either[MagnoliaEndpoint, Either[MagnoliaEndpoint, MagnoliaEndpoint]]]]("CHOICE")
+        c <- Configured[IO, Option[Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]]("CHOICE")
           .run(env)
-      } yield c.shouldBe(MagnoliaEndpoint("choice-opt-c2-c1-host", 9).asLeft.asRight.some.valid)
+      } yield c.shouldBe(ShapelessEndpoint("choice-opt-c2-c1-host", 9).asLeft.asRight.some.valid)
   }
 
-  property("Missing Configured[IO, Option[Either[MagnoliaEndpoint, Either[MagnoliaEndpoint, MagnoliaEndpoint]]]]") =
+  property("Missing Configured[IO, Option[Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]]") =
     forAllIO(genEnvIO(Map.empty, "empty")) {
       e =>
         for {
           env <- e
-          c <- Configured[IO, Option[Either[MagnoliaEndpoint, Either[MagnoliaEndpoint, MagnoliaEndpoint]]]]("CHOICE")
+          c <- Configured[IO, Option[Either[ShapelessEndpoint, Either[ShapelessEndpoint, ShapelessEndpoint]]]]("CHOICE")
             .run(env)
         } yield c.shouldBe(None.validNec)
     }
@@ -428,7 +428,7 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
       } yield c.shouldBe(ConfiguredError.missingValue(keyOf("INTLIST", "COUNT")).invalidNec)
   }
 
-  property("Present valid Configured[IO, List[MagnoliaEndpoint]]") = forAllIO(
+  property("Present valid Configured[IO, List[ShapelessEndpoint]]") = forAllIO(
     genEnvIO(
       Map(
         "EPLIST_COUNT" -> "2",
@@ -443,19 +443,19 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, List[MagnoliaEndpoint]]("EPLIST").run(env)
-      } yield c.shouldBe(List(MagnoliaEndpoint("eplist0-host", 2), MagnoliaEndpoint("eplist1-host", 3)).validNec)
+        c <- Configured[IO, List[ShapelessEndpoint]]("EPLIST").run(env)
+      } yield c.shouldBe(List(ShapelessEndpoint("eplist0-host", 2), ShapelessEndpoint("eplist1-host", 3)).validNec)
   }
 
-  property("Missing Configured[IO, List[MagnoliaEndpoint]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
+  property("Missing Configured[IO, List[ShapelessEndpoint]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
     e =>
       for {
         env <- e
-        c <- Configured[IO, List[MagnoliaEndpoint]]("EPLIST").run(env)
+        c <- Configured[IO, List[ShapelessEndpoint]]("EPLIST").run(env)
       } yield c.shouldBe(ConfiguredError.missingValue(keyOf("EPLIST", "COUNT")).invalidNec)
   }
 
-  property("Present valid Configured[IO, List[TwoMagnoliaEndpoints]]") = forAllIO(
+  property("Present valid Configured[IO, List[TwoShapelessEndpoints]]") = forAllIO(
     genEnvIO(
       Map(
         "TEPLIST_COUNT" -> "2",
@@ -475,20 +475,20 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
     e =>
       for {
         env <- e
-        c <- Configured[IO, List[TwoMagnoliaEndpoints]]("TEPLIST").run(env)
+        c <- Configured[IO, List[TwoShapelessEndpoints]]("TEPLIST").run(env)
       } yield c.shouldBe(
         List(
-          TwoMagnoliaEndpoints(MagnoliaEndpoint("teplist0-ep1-host", 7), MagnoliaEndpoint("multilist-ep1-host0", 7)),
-          TwoMagnoliaEndpoints(MagnoliaEndpoint("teplist1-ep1-host", 7), MagnoliaEndpoint("multilist-ep2-host1", 7))
+          TwoShapelessEndpoints(ShapelessEndpoint("teplist0-ep1-host", 7), ShapelessEndpoint("multilist-ep1-host0", 7)),
+          TwoShapelessEndpoints(ShapelessEndpoint("teplist1-ep1-host", 7), ShapelessEndpoint("multilist-ep2-host1", 7))
         ).validNec
       )
   }
 
-  property("Missing Configured[IO, List[TwoMagnoliaEndpoints]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
+  property("Missing Configured[IO, List[TwoShapelessEndpoints]]") = forAllIO(genEnvIO(Map.empty, "empty")) {
     e =>
       for {
         env <- e
-        c <- Configured[IO, List[TwoMagnoliaEndpoints]]("TEPLIST").run(env)
+        c <- Configured[IO, List[TwoShapelessEndpoints]]("TEPLIST").run(env)
       } yield c.shouldBe(ConfiguredError.missingValue(keyOf("TEPLIST", "COUNT")).invalidNec)
   }
 
@@ -508,100 +508,100 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
   }
 
   property("Configured description should handle sealed traits") = simpleTest(
-    Configured[IO, MagnoliaSomeAdt]
+    Configured[IO, ShapelessSomeAdt]
       .description("LP1")
       .sorted
       .shouldBe(
         ConfigDescription(
           List(
-            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EP_HOST", "string"),
-            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EP_PORT", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_SINGLE_EXTRA", "string"),
-            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP1_HOST", "string"),
-            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP1_PORT", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP2_HOST", "string"),
-            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EPS_EP2_PORT", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_DUAL_EXTRA", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP1_HOST", "string"),
-            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP1_PORT", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP2_HOST", "string"),
-            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP2_PORT", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP3_HOST", "string"),
-            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EPS_EP3_PORT", "integer"),
-            ConfigValueInfo("LP1_MAGNOLIA_TRIPLE_EXTRA", "string")
+            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EP_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EP_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_SINGLE_EXTRA", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP1_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP1_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP2_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EPS_EP2_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_DUAL_EXTRA", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP1_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP1_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP2_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP2_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP3_HOST", "string"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EPS_EP3_PORT", "integer"),
+            ConfigValueInfo("LP1_SHAPELESS_TRIPLE_EXTRA", "string")
           )
         ).sorted
       )
   )
 
-  property("Configured should handle sealed traits – MagnoliaSingle") = forAllIO(
+  property("Configured should handle sealed traits – ShapelessSingle") = forAllIO(
     genEnvIO(
       Map(
-        "LP1_MAGNOLIA_SINGLE_EP_HOST" -> "lp1-host",
-        "LP1_MAGNOLIA_SINGLE_EP_PORT" -> "1",
-        "LP1_MAGNOLIA_SINGLE_EXTRA" -> "singleextra"
+        "LP1_SHAPELESS_SINGLE_EP_HOST" -> "lp1-host",
+        "LP1_SHAPELESS_SINGLE_EP_PORT" -> "1",
+        "LP1_SHAPELESS_SINGLE_EXTRA" -> "singleextra"
       ),
-      "test19"
+      "test22"
     )
   ) {
     e =>
       for {
         env <- e
-        c <- Configured[IO, MagnoliaSomeAdt].value("LP1").run(env)
-      } yield c.shouldBe(MagnoliaSomeAdt.MagnoliaSingle(MagnoliaEndpoint("lp1-host", 1), "singleextra").validNec)
+        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
+      } yield c.shouldBe(ShapelessSomeAdt.ShapelessSingle(ShapelessEndpoint("lp1-host", 1), "singleextra").validNec)
   }
 
-  property("Configured should handle sealed traits – MagnoliaDual") = forAllIO(
+  property("Configured should handle sealed traits – ShapelessDual") = forAllIO(
     genEnvIO(
       Map(
-        "LP1_MAGNOLIA_DUAL_EPS_EP1_HOST" -> "multi-ep1-host",
-        "LP1_MAGNOLIA_DUAL_EPS_EP1_PORT" -> "2",
-        "LP1_MAGNOLIA_DUAL_EPS_EP2_HOST" -> "multi-ep2-host",
-        "LP1_MAGNOLIA_DUAL_EPS_EP2_PORT" -> "3",
-        "LP1_MAGNOLIA_DUAL_EXTRA" -> "123"
+        "LP1_SHAPELESS_DUAL_EPS_EP1_HOST" -> "multi-ep1-host",
+        "LP1_SHAPELESS_DUAL_EPS_EP1_PORT" -> "2",
+        "LP1_SHAPELESS_DUAL_EPS_EP2_HOST" -> "multi-ep2-host",
+        "LP1_SHAPELESS_DUAL_EPS_EP2_PORT" -> "3",
+        "LP1_SHAPELESS_DUAL_EXTRA" -> "123"
       ),
-      "test20"
+      "test23"
     )
   ) {
     e =>
       for {
         env <- e
-        c <- Configured[IO, MagnoliaSomeAdt].value("LP1").run(env)
+        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
       } yield c.shouldBe(
-        MagnoliaSomeAdt
-          .MagnoliaDual(
-            TwoMagnoliaEndpoints(MagnoliaEndpoint("multi-ep1-host", 2), MagnoliaEndpoint("multi-ep2-host", 3)),
+        ShapelessSomeAdt
+          .ShapelessDual(
+            TwoShapelessEndpoints(ShapelessEndpoint("multi-ep1-host", 2), ShapelessEndpoint("multi-ep2-host", 3)),
             123
           )
           .validNec
       )
   }
 
-  property("Configured should handle sealed traits - MagnoliaTriple") = forAllIO(
+  property("Configured should handle sealed traits - ShapelessTriple") = forAllIO(
     genEnvIO(
       Map(
-        "LP1_MAGNOLIA_TRIPLE_EPS_EP1_HOST" -> "multi-ep1-host",
-        "LP1_MAGNOLIA_TRIPLE_EPS_EP1_PORT" -> "2",
-        "LP1_MAGNOLIA_TRIPLE_EPS_EP2_HOST" -> "multi-ep2-host",
-        "LP1_MAGNOLIA_TRIPLE_EPS_EP2_PORT" -> "3",
-        "LP1_MAGNOLIA_TRIPLE_EPS_EP3_HOST" -> "multi-ep3-host",
-        "LP1_MAGNOLIA_TRIPLE_EPS_EP3_PORT" -> "4",
-        "LP1_MAGNOLIA_TRIPLE_EXTRA" -> "singleextra"
+        "LP1_SHAPELESS_TRIPLE_EPS_EP1_HOST" -> "multi-ep1-host",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP1_PORT" -> "2",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP2_HOST" -> "multi-ep2-host",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP2_PORT" -> "3",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP3_HOST" -> "multi-ep3-host",
+        "LP1_SHAPELESS_TRIPLE_EPS_EP3_PORT" -> "4",
+        "LP1_SHAPELESS_TRIPLE_EXTRA" -> "singleextra"
       ),
-      "test21"
+      "test24"
     )
   ) {
     e =>
       for {
         env <- e
-        c <- Configured[IO, MagnoliaSomeAdt].value("LP1").run(env)
+        c <- Configured[IO, ShapelessSomeAdt].value("LP1").run(env)
       } yield c.shouldBe(
-        MagnoliaSomeAdt
-          .MagnoliaTriple(
-            ThreeMagnoliaEndpoints(
-              MagnoliaEndpoint("multi-ep1-host", 2),
-              MagnoliaEndpoint("multi-ep2-host", 3),
-              MagnoliaEndpoint("multi-ep3-host", 4)
+        ShapelessSomeAdt
+          .ShapelessTriple(
+            ThreeShapelessEndpoints(
+              ShapelessEndpoint("multi-ep1-host", 2),
+              ShapelessEndpoint("multi-ep2-host", 3),
+              ShapelessEndpoint("multi-ep3-host", 4)
             ),
             "singleextra"
           )
@@ -624,15 +624,15 @@ object MagnoliaConfigSupportTest extends Properties("Magnolia config support") w
 
   //
 
-  final case class MagnoliaEndpoint(host: String, port: Int)
-  final case class TwoMagnoliaEndpoints(ep1: MagnoliaEndpoint, ep2: MagnoliaEndpoint)
-  final case class ThreeMagnoliaEndpoints(ep1: MagnoliaEndpoint, ep2: MagnoliaEndpoint, ep3: MagnoliaEndpoint)
+  final case class ShapelessEndpoint(host: String, port: Int)
+  final case class TwoShapelessEndpoints(ep1: ShapelessEndpoint, ep2: ShapelessEndpoint)
+  final case class ThreeShapelessEndpoints(ep1: ShapelessEndpoint, ep2: ShapelessEndpoint, ep3: ShapelessEndpoint)
 
-  sealed trait MagnoliaSomeAdt
-  object MagnoliaSomeAdt {
-    final case class MagnoliaSingle(ep: MagnoliaEndpoint, extra: String) extends MagnoliaSomeAdt
-    final case class MagnoliaDual(eps: TwoMagnoliaEndpoints, extra: Int) extends MagnoliaSomeAdt
-    final case class MagnoliaTriple(eps: ThreeMagnoliaEndpoints, extra: String) extends MagnoliaSomeAdt
+  sealed trait ShapelessSomeAdt
+  object ShapelessSomeAdt {
+    final case class ShapelessSingle(ep: ShapelessEndpoint, extra: String) extends ShapelessSomeAdt
+    final case class ShapelessDual(eps: TwoShapelessEndpoints, extra: Int) extends ShapelessSomeAdt
+    final case class ShapelessTriple(eps: ThreeShapelessEndpoints, extra: String) extends ShapelessSomeAdt
   }
 
 }
