@@ -2,8 +2,10 @@ package com.leighperry.conduction.config
 
 import cats.data.{ Kleisli, ValidatedNec }
 import cats.instances.list._
+import cats.instances.order._
+import cats.instances.string._
 import cats.syntax.applicative._
-import cats.syntax.apply._
+import cats.syntax.contravariantSemigroupal._
 import cats.syntax.either._
 import cats.syntax.flatMap._
 import cats.syntax.foldable._
@@ -34,7 +36,7 @@ object ConfigDescription {
   implicit val instanceMonoid: Monoid[ConfigDescription] =
     new Monoid[ConfigDescription] {
       override def empty: ConfigDescription =
-        ConfigDescription(Nil)
+        ConfigDescription(Monoid[List[ConfigValueInfo]].empty)
       override def combine(x: ConfigDescription, y: ConfigDescription): ConfigDescription =
         ConfigDescription(x.values |+| y.values)
     }
@@ -64,10 +66,7 @@ trait Configured[F[_], A] {
 
   def andThen[B](
     f: A => ValidatedNec[ConfiguredError, B]
-  )(implicit
-    F: Functor[F],
-    B: Configured[F, B]
-  ): Configured[F, B] =
+  )(implicit F: Functor[F], B: Configured[F, B]): Configured[F, B] =
     Configured.create(
       name => self.value(name).mapF(_.map(_.andThen(f))),
       name => self.description(name) |+| B.description(name)
@@ -107,9 +106,7 @@ object Configured {
 
   ////
 
-  implicit def applicativeConfigured[F[_]](implicit
-    F: Applicative[F]
-  ): Applicative[Configured[F, *]] =
+  implicit def applicativeConfigured[F[_]](implicit F: Applicative[F]): Applicative[Configured[F, *]] =
     new Applicative[Configured[F, *]] {
       override def pure[A](a: A): Configured[F, A] =
         create(
@@ -156,10 +153,7 @@ object Configured {
       name => ConfigDescription(ConfigValueInfo(name, Conversion[A].description))
     )
 
-  implicit def configuredOption[F[_], A](implicit
-    F: Functor[F],
-    A: Configured[F, A]
-  ): Configured[F, Option[A]] = {
+  implicit def configuredOption[F[_], A](implicit F: Functor[F], A: Configured[F, A]): Configured[F, Option[A]] = {
     def optionName(name: Key) = s"${name}_OPT"
 
     create(
@@ -176,10 +170,7 @@ object Configured {
     )
   }
 
-  implicit def configuredList[F[_], A](implicit
-    F: Monad[F],
-    A: Configured[F, A]
-  ): Configured[F, List[A]] = {
+  implicit def configuredList[F[_], A](implicit F: Monad[F], A: Configured[F, A]): Configured[F, List[A]] = {
     def countName(name: Key) = name + "_COUNT"
     def indexName(name: Key, i: String) = s"${name}_$i"
 
@@ -205,8 +196,8 @@ object Configured {
     )
   }
 
-  implicit def configuredEither[F[_], A, B](implicit
-    F: Monad[F],
+  implicit def configuredEither[F[_], A, B](
+    implicit F: Monad[F],
     A: Configured[F, A],
     B: Configured[F, B]
   ): Configured[F, Either[A, B]] =

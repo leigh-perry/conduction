@@ -4,10 +4,11 @@ import cats.instances.int._
 import cats.instances.long._
 import cats.instances.string._
 import cats.instances.tuple._
+import cats.kernel.laws.discipline.MonoidTests
 import cats.laws.discipline.{ ApplicativeTests, FunctorTests }
 import cats.syntax.either._
 import cats.syntax.functor._
-import cats.{ Applicative, Eq, Functor, Id }
+import cats.{ Applicative, Eq, Id }
 import com.leighperry.conduction.config.testsupport.TestSupport
 import minitest.SimpleTestSuite
 import minitest.laws.Checkers
@@ -29,14 +30,14 @@ object ConfigSupportLawsTest extends SimpleTestSuite with Checkers with TestSupp
       }
   }
 
+  // This is needed for 2.12 to compile
+  implicit val instanceApplicative: Applicative[Configured[Id, *]] = Configured.applicativeConfigured[Id]
+
   ////
 
   checkAll("`Conversion` Functor laws") {
     _ => FunctorTests[Conversion].functor[Int, Long, String]
   }
-
-  // This is needed for 2.12
-  implicit val instanceApplicative: Applicative[Configured[Id, *]] = Configured.applicativeConfigured[Id]
 
   checkAll("`Configured` Functor laws") {
     _ => FunctorTests[Configured[Id, *]].functor[Int, Long, String]
@@ -44,6 +45,10 @@ object ConfigSupportLawsTest extends SimpleTestSuite with Checkers with TestSupp
 
   checkAll("`Configured` Applicative laws") {
     _ => ApplicativeTests[Configured[Id, *]].applicative[Int, Long, String]
+  }
+
+  checkAll("`ConfigDescription` Monoid laws") {
+    _ => MonoidTests[ConfigDescription].monoid
   }
 
 }
@@ -91,4 +96,22 @@ object Arbitraries extends TestSupport {
       }
     }
 
+  ////
+
+  private val genConfigValueInfo =
+    for {
+      name <- genFor[String]
+      value <- genFor[String]
+    } yield ConfigValueInfo(name, value)
+
+  implicit val instanceArbitraryConfigDescription: Arbitrary[ConfigDescription] =
+    Arbitrary {
+      for {
+        scount <- Gen.chooseNum[Int](0, 20)
+        cvs <- Gen.listOfN(scount, genConfigValueInfo)
+      } yield ConfigDescription(cvs)
+    }
+
+  implicit val instanceEqConfigDescription: Eq[ConfigDescription] =
+    Eq.fromUniversalEquals
 }
