@@ -8,7 +8,7 @@ object Dependencies {
     val catsEffect = "2.1.4"
 
     // NB: later versions give error: macro implementations cannot have implicit parameters other than WeakTypeTag evidences
-    val magnolia = "0.12.8"
+    val magnolia = "0.17.0"
     val shapeless = "2.3.3"
 
     val minitest = "2.8.2"
