@@ -1,9 +1,6 @@
 package com.leighperry.conduction.config
 
 import cats.data.{ Kleisli, ValidatedNec }
-import cats.instances.list._
-import cats.instances.order._
-import cats.instances.string._
 import cats.syntax.applicative._
 import cats.syntax.contravariantSemigroupal._
 import cats.syntax.either._
