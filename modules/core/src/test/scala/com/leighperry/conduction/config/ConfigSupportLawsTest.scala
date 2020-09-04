@@ -1,9 +1,4 @@
 package com.leighperry.conduction.config
-
-import cats.instances.int._
-import cats.instances.long._
-import cats.instances.string._
-import cats.instances.tuple._
 import cats.kernel.laws.discipline.MonoidTests
 import cats.laws.discipline.{ ApplicativeTests, FunctorTests }
 import cats.syntax.either._
