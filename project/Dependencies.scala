@@ -5,7 +5,7 @@ object Dependencies {
     val kindProjector = "0.11.0"
 
     val cats = "2.2.0"
-    val catsEffect = "2.1.4"
+    val catsEffect = "2.2.0"
 
     // NB: later versions give error: macro implementations cannot have implicit parameters other than WeakTypeTag evidences
     val magnolia = "0.17.0"
