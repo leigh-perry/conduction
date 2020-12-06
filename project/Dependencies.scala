@@ -11,7 +11,7 @@ object Dependencies {
     val magnolia = "0.17.0"
     val shapeless = "2.3.3"
 
-    val minitest = "2.9.0"
+    val minitest = "2.9.1"
     val scalacheck = "1.15.1"
   }
 
