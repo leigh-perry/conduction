@@ -12,7 +12,7 @@ object Dependencies {
     val shapeless = "2.3.3"
 
     val minitest = "2.9.1"
-    val scalacheck = "1.15.1"
+    val scalacheck = "1.15.2"
   }
 
   val cats = "org.typelevel" %% "cats-core" % Version.cats
