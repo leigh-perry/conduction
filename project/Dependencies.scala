@@ -2,7 +2,7 @@ import sbt._
 
 object Dependencies {
   object Version {
-    val kindProjector = "0.11.2"
+    val kindProjector = "0.11.3"
 
     val cats = "2.3.1"
     val catsEffect = "2.3.1"
